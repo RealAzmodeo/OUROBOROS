@@ -849,7 +849,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
     // --- SEQUENCE & PORTALS ---
     const currentSequence: ItemType[] = nextSnakeState.filter(s => s.type === 'body' && s.isCharged && s.variant).map(s => s.variant!);
-    let sequenceMatched = false;
+    let sequenceMatched = prev.requiredSequence.length === 0;
     if (prev.requiredSequence.length > 0) {
         const reqStr = prev.requiredSequence.join(',');
         const currStr = currentSequence.join(',');
