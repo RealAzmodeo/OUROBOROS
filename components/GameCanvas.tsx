@@ -95,8 +95,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
             staticCtx.strokeStyle = colors.grid;
             staticCtx.lineWidth = 1;
             staticCtx.beginPath();
-            for (let x = 0; x <= width; x += GRID_SIZE) { staticCtx.moveTo(x, 0); staticCtx.lineTo(x, height); }
-            for (let y = 0; y <= height; y += GRID_SIZE) { staticCtx.moveTo(0, y); staticCtx.lineTo(width, y); }
+            // Subtle offset to ensure grid lines aren't right on the edge of the border
+            for (let x = 0; x <= width; x += GRID_SIZE) { staticCtx.moveTo(x, 0.5); staticCtx.lineTo(x, height - 0.5); }
+            for (let y = 0; y <= height; y += GRID_SIZE) { staticCtx.moveTo(0.5, y); staticCtx.lineTo(width - 0.5, y); }
             staticCtx.stroke();
 
             // SEAMLESS WALL RENDERING
@@ -139,6 +140,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                 const px = sx * GRID_SIZE;
                 const py = sy * GRID_SIZE;
 
+                // Adjust for line width to avoid clipping at canvas edges
+                const safeOffset = 1;
+
                 // Neighbors
                 const n = wallSet.has(`${sx},${sy - 1}`);
                 const s = wallSet.has(`${sx},${sy + 1}`);
@@ -146,10 +150,10 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                 const w = wallSet.has(`${sx - 1},${sy}`);
 
                 // Draw line if neighbor is missing (Edge)
-                if (!n) { staticCtx.moveTo(px, py); staticCtx.lineTo(px + GRID_SIZE, py); }
-                if (!s) { staticCtx.moveTo(px, py + GRID_SIZE); staticCtx.lineTo(px + GRID_SIZE, py + GRID_SIZE); }
-                if (!w) { staticCtx.moveTo(px, py); staticCtx.lineTo(px, py + GRID_SIZE); }
-                if (!e) { staticCtx.moveTo(px + GRID_SIZE, py); staticCtx.lineTo(px + GRID_SIZE, py + GRID_SIZE); }
+                if (!n) { staticCtx.moveTo(px, py + safeOffset); staticCtx.lineTo(px + GRID_SIZE, py + safeOffset); }
+                if (!s) { staticCtx.moveTo(px, py + GRID_SIZE - safeOffset); staticCtx.lineTo(px + GRID_SIZE, py + GRID_SIZE - safeOffset); }
+                if (!w) { staticCtx.moveTo(px + safeOffset, py); staticCtx.lineTo(px + safeOffset, py + GRID_SIZE); }
+                if (!e) { staticCtx.moveTo(px + GRID_SIZE - safeOffset, py); staticCtx.lineTo(px + GRID_SIZE - safeOffset, py + GRID_SIZE); }
             });
 
             staticCtx.stroke();

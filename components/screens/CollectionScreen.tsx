@@ -25,7 +25,7 @@ export const CollectionScreen: React.FC<CollectionScreenProps> = ({ styles, show
     // Indices: 0-4 for tabs, 5 for Back button
     const { selectedIndex, setSelectedIndex } = useMenuNavigation({
         items: tabs.length + 1,
-        cols: tabs.length, 
+        cols: tabs.length,
         onSelect: (index) => {
             if (index < tabs.length) {
                 setActiveCollectionTab(tabs[index]);
@@ -37,11 +37,11 @@ export const CollectionScreen: React.FC<CollectionScreenProps> = ({ styles, show
     });
 
     const getCollectionContent = () => {
-        if (activeCollectionTab === 'modules') return BASE_UPGRADES.map((item) => ({...item, isSeen: seenItems.has(item.type)}));
-        if (activeCollectionTab === 'enemies') return ENEMY_DB.map((item) => ({...item, isSeen: seenItems.has(item.type)}));
-        if (activeCollectionTab === 'mechanics') return MECHANIC_DB.map((item) => ({...item, isSeen: seenItems.has(item.id)}));
-        if (activeCollectionTab === 'visuals') return VFX_DB.map((item) => ({...item, isSeen: seenItems.has(item.id)}));
-        if (activeCollectionTab === 'anomalies') return ANOMALY_DB.map((item) => ({...item, isSeen: seenItems.has(item.type)}));
+        if (activeCollectionTab === 'modules') return BASE_UPGRADES.map((item) => ({ ...item, isSeen: seenItems.has(item.type) }));
+        if (activeCollectionTab === 'enemies') return ENEMY_DB.map((item) => ({ ...item, isSeen: seenItems.has(item.type) }));
+        if (activeCollectionTab === 'mechanics') return MECHANIC_DB.map((item) => ({ ...item, isSeen: seenItems.has(item.id) }));
+        if (activeCollectionTab === 'visuals') return VFX_DB.map((item) => ({ ...item, isSeen: seenItems.has(item.id) }));
+        if (activeCollectionTab === 'anomalies') return ANOMALY_DB.map((item) => ({ ...item, isSeen: seenItems.has(item.type) }));
         return [];
     };
 
@@ -70,36 +70,36 @@ export const CollectionScreen: React.FC<CollectionScreenProps> = ({ styles, show
             {showCRT && <div className="crt-scanlines" />}
             <div className="container mx-auto max-w-6xl h-full flex flex-col p-8">
                 <div className="flex items-center justify-between mb-8">
-                     <div className="flex items-center gap-6">
-                         <button 
-                            onClick={onClose} 
+                    <div className="flex items-center gap-6">
+                        <button
+                            onClick={onClose}
                             onMouseEnter={() => setSelectedIndex(tabs.length)}
                             className={`flex items-center gap-2 font-bold uppercase tracking-widest transition-colors text-lg
                                 ${selectedIndex === tabs.length ? 'text-white border-b-2 border-white' : 'hover:text-white'}
                             `}
-                         >
-                             <ArrowLeft /> Return
-                         </button>
-                         <h2 className="font-display text-4xl font-bold uppercase tracking-widest border-l-2 border-gray-700 pl-6">Collection // {activeCollectionTab}</h2>
-                     </div>
-                     
-                     <button onClick={onToggleDebugUnlock} className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest opacity-30 hover:opacity-100 transition-opacity">
-                         <Terminal size={16} /> DEBUG: TOGGLE UNLOCK
-                     </button>
+                        >
+                            <ArrowLeft /> Return
+                        </button>
+                        <h2 className="font-display text-4xl font-bold uppercase tracking-widest border-l-2 border-gray-700 pl-6">Collection // {activeCollectionTab}</h2>
+                    </div>
+
+                    <button onClick={onToggleDebugUnlock} className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest opacity-30 hover:opacity-100 transition-opacity">
+                        <Terminal size={16} /> DEBUG: TOGGLE UNLOCK
+                    </button>
                 </div>
 
-                <div className="flex gap-4 mb-8 border-b border-gray-800 pb-1 overflow-x-auto">
+                <div className="flex w-full mb-8 border-b border-gray-800 pb-1">
                     {tabs.map((tab, idx) => (
-                        <button 
+                        <button
                             key={tab}
-                            onClick={() => setActiveCollectionTab(tab)} 
+                            onClick={() => setActiveCollectionTab(tab)}
                             onMouseEnter={() => setSelectedIndex(idx)}
-                            className={`px-6 py-2 font-bold uppercase tracking-widest border-b-2 transition-colors text-lg whitespace-nowrap 
-                                ${activeCollectionTab === tab ? 'border-dnd-gold text-dnd-gold' : 'border-transparent text-gray-600 hover:text-gray-400'}
+                            className={`flex-1 px-2 py-3 font-bold uppercase tracking-widest border-b-2 transition-all text-sm md:text-base lg:text-lg truncate
+                                ${activeCollectionTab === tab ? 'border-dnd-gold text-dnd-gold bg-dnd-gold/5' : 'border-transparent text-gray-600 hover:text-gray-400'}
                                 ${selectedIndex === idx ? 'bg-white/10' : ''}
                             `}
                         >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            {tab}
                         </button>
                     ))}
                 </div>
@@ -125,24 +125,24 @@ export const CollectionScreen: React.FC<CollectionScreenProps> = ({ styles, show
                                     <AlertTriangle size={24} className={item.isSeen ? 'text-red-500' : 'text-gray-600'} />
                                 )}
                             </div>
-                            
+
                             {/* MODULE PREVIEW */}
                             {activeCollectionTab === 'modules' && item.isSeen && (
                                 <div className="w-full h-32 mb-4 flex items-center justify-center bg-black/50 border border-gray-800 rounded relative overflow-hidden">
-                                     {/* Background glow for aesthetic */}
-                                     <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
-                                     <AnimatedUpgradeIcon type={item.type} size={80} />
+                                    {/* Background glow for aesthetic */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+                                    <AnimatedUpgradeIcon type={item.type} size={80} />
                                 </div>
                             )}
 
                             {activeCollectionTab === 'visuals' && item.isSeen && (
                                 <VfxPreview id={item.id} />
                             )}
-                            
+
                             {(activeCollectionTab === 'enemies' || activeCollectionTab === 'mechanics') && item.isSeen && (
                                 <EntityPreview id={activeCollectionTab === 'enemies' ? item.type : item.id} category={activeCollectionTab === 'enemies' ? 'enemy' : 'mechanic'} />
                             )}
-                            
+
                             {activeCollectionTab === 'anomalies' && item.isSeen && (
                                 <div className="w-full h-24 mb-4 flex items-center justify-center bg-black/50 border border-gray-800 rounded">
                                     {getAnomalyIcon(item.type)}
@@ -152,7 +152,7 @@ export const CollectionScreen: React.FC<CollectionScreenProps> = ({ styles, show
                             <p className="font-mono text-base leading-relaxed opacity-80 text-dnd-paper">
                                 {item.description}
                             </p>
-                            
+
                             {activeCollectionTab === 'modules' && item.isSeen && (
                                 <div className="mt-4 pt-4 border-t border-white/10 flex justify-between text-xs font-mono uppercase text-gray-500">
                                     <span>Max Level: {item.maxLevel}</span>
