@@ -300,7 +300,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
             }
 
             // Flash screen white briefly on death (Draw on Dynamic Layer)
-            if (timeSinceDeath < 100) {
+            if (gameState.status === 'gameover' && timeSinceDeath > 0 && timeSinceDeath < 100) {
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, width, height);
             }
