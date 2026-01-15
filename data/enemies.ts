@@ -8,7 +8,7 @@ interface EnemyConfig {
     description: string;
     color: string;
     baseSpeed: number; // Ticks per move (lower is faster)
-    behavior: 'static' | 'patrol' | 'random' | 'chase' | 'boss';
+    behavior: 'static' | 'patrol' | 'random' | 'chase' | 'boss' | 'ghost' | 'replicator' | 'splitter';
 }
 
 export const ENEMY_REGISTRY: Record<EnemyType, EnemyConfig> = {
@@ -39,10 +39,34 @@ export const ENEMY_REGISTRY: Record<EnemyType, EnemyConfig> = {
     chaser: {
         type: 'chaser',
         name: 'Hunter-Killer',
-        description: 'Actively pursues the chassis. Speed increases with threat level.',
+        description: 'Actively pursues the chassis. Improved with pathfinding.',
         color: '#FF0033',
         baseSpeed: 2,
         behavior: 'chase'
+    },
+    ghost: {
+        type: 'ghost',
+        name: 'Phantasm',
+        description: 'Bypasses structural barriers. Slow but persistent.',
+        color: '#AA00FF', // Purple
+        baseSpeed: 5,
+        behavior: 'ghost'
+    },
+    replicator: {
+        type: 'replicator',
+        name: 'Binary Spore',
+        description: 'Duplicates if not neutralized quickly.',
+        color: '#00FFCC', // Teal
+        baseSpeed: 4,
+        behavior: 'replicator'
+    },
+    splitter: {
+        type: 'splitter',
+        name: 'Fragmenter',
+        description: 'Splits into multiple smaller nodes on destruction.',
+        color: '#FFAA00', // Orange
+        baseSpeed: 3,
+        behavior: 'splitter'
     },
     boss: {
         type: 'boss',

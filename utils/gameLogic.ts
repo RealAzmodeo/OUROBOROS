@@ -18,7 +18,7 @@ interface GameTickContext {
     seenEvasionTutorial: boolean;
     unlockCallback: (id: string) => void;
     checkpointState?: GameState | null;
-    playSfx: (type: string) => void; 
+    playSfx: (type: string) => void;
 }
 
 // Helper to convert snake body into debris events
@@ -28,8 +28,8 @@ const disintegrateSnake = (snake: Segment[]): VfxEvent[] => {
         let color = '#555';
         if (s.type === 'head') color = '#FFFFFF';
         else if (s.isCharged) {
-             if (s.isSequencePart) color = '#39FF14'; 
-             else color = '#00F0FF'; 
+            if (s.isSequencePart) color = '#39FF14';
+            else color = '#00F0FF';
         }
         debris.push({ type: 'explosion', x: s.x, y: s.y, color });
     });
@@ -37,19 +37,19 @@ const disintegrateSnake = (snake: Segment[]): VfxEvent[] => {
 };
 
 const handleTutorialRespawn = (prev: GameState, currentVfx: VfxEvent[], ctx: GameTickContext, errorId: number): GameTickResult => {
-    ctx.playSfx('game_over'); 
-    
+    ctx.playSfx('game_over');
+
     let newState: GameState;
     const safePos = getRandomSafePosition(prev.walls, prev.enemies);
     const newSnake: Segment[] = [{ ...safePos, id: `respawn-${ctx.timestamp}`, type: 'head', isCharged: false }];
-    
+
     newState = {
         ...prev,
         snake: newSnake,
         status: 'tutorial',
         pendingType: null // Reset pending on respawn
     };
-    
+
     return {
         newState,
         shouldTriggerHpTutorial: false,
@@ -64,23 +64,23 @@ export const processEvasionTick = (prev: GameState, ctx: GameTickContext): GameT
     if (!prev.evasionState) return { newState: prev, shouldTriggerHpTutorial: false, nextTutorialStep: ctx.tutorialStep, vfxEvents: [] };
 
     const es = { ...prev.evasionState };
-    
-    const level = prev.evasionLevel;
-    let speedMult = 0.5 + ((level - 1) * 0.1); 
-    let gapSize = Math.max(2, 6 - Math.floor((level - 1) / 2)); 
-    let density = Math.min(0.7, 0.15 + ((level - 1) * 0.05)); 
 
-    const scrollSpeed = 0.5 * speedMult; 
-    
+    const level = prev.evasionLevel;
+    let speedMult = 0.5 + ((level - 1) * 0.1);
+    let gapSize = Math.max(2, 6 - Math.floor((level - 1) / 2));
+    let density = Math.min(0.7, 0.15 + ((level - 1) * 0.05));
+
+    const scrollSpeed = 0.5 * speedMult;
+
     if (ctx.direction.x !== 0) {
-        const lateralSpeed = 0.4; 
+        const lateralSpeed = 0.4;
         es.playerX += ctx.direction.x * lateralSpeed;
         if (es.playerX < 0) es.playerX = 0;
         if (es.playerX >= BOARD_WIDTH_CELLS) es.playerX = BOARD_WIDTH_CELLS - 1;
     }
 
-    es.gridOffset += scrollSpeed * 20; 
-    es.timer -= 30; 
+    es.gridOffset += scrollSpeed * 20;
+    es.timer -= 30;
 
     es.obstacles = es.obstacles.map(o => ({ ...o, y: o.y + scrollSpeed })).filter(o => o.y < BOARD_HEIGHT_CELLS);
     es.coins = es.coins.map(c => ({ ...c, y: c.y + scrollSpeed })).filter(c => c.y < BOARD_HEIGHT_CELLS);
@@ -90,11 +90,11 @@ export const processEvasionTick = (prev: GameState, ctx: GameTickContext): GameT
         const rowY = -2;
         const gapStart = Math.floor(Math.random() * (BOARD_WIDTH_CELLS - gapSize));
         let currentBlockStart = -1;
-        
+
         for (let x = 0; x < BOARD_WIDTH_CELLS; x++) {
             const isGap = x >= gapStart && x < gapStart + gapSize;
-            const shouldSpawn = !isGap && Math.random() < (density + 0.3); 
-            
+            const shouldSpawn = !isGap && Math.random() < (density + 0.3);
+
             if (shouldSpawn) {
                 if (currentBlockStart === -1) currentBlockStart = x;
             } else {
@@ -109,16 +109,16 @@ export const processEvasionTick = (prev: GameState, ctx: GameTickContext): GameT
         }
 
         if (Math.random() > 0.3) {
-            for(let cx = gapStart; cx < gapStart + gapSize; cx++) {
-                 if (Math.random() > 0.5) es.coins.push({ x: cx, y: rowY });
+            for (let cx = gapStart; cx < gapStart + gapSize; cx++) {
+                if (Math.random() > 0.5) es.coins.push({ x: cx, y: rowY });
             }
         }
 
-        es.spawnTimer = 500 / speedMult; 
+        es.spawnTimer = 500 / speedMult;
     }
 
-    const playerY = BOARD_HEIGHT_CELLS - 4; 
-    
+    const playerY = BOARD_HEIGHT_CELLS - 4;
+
     for (let i = es.coins.length - 1; i >= 0; i--) {
         const c = es.coins[i];
         if (Math.abs(c.x - es.playerX) < 0.8 && Math.abs(c.y - playerY) < 0.8) {
@@ -128,24 +128,24 @@ export const processEvasionTick = (prev: GameState, ctx: GameTickContext): GameT
         }
     }
 
-    const hit = es.obstacles.some(o => 
-        es.playerX >= o.x - 0.5 && es.playerX < o.x + o.width - 0.5 && 
+    const hit = es.obstacles.some(o =>
+        es.playerX >= o.x - 0.5 && es.playerX < o.x + o.width - 0.5 &&
         playerY >= o.y - 0.5 && playerY < o.y + o.height - 0.5
     );
 
     if (hit) {
         ctx.playSfx('damage');
         return {
-            newState: { 
-                ...prev, 
-                evasionState: es, 
+            newState: {
+                ...prev,
+                evasionState: es,
                 status: 'evasion_fail',
-                currency: prev.currency + es.coinsCollected 
+                currency: prev.currency + es.coinsCollected
             },
             shouldTriggerHpTutorial: false,
             nextTutorialStep: ctx.tutorialStep,
             resetInput: true,
-            vfxEvents: [{type: 'explosion', x: es.playerX, y: playerY, color: '#F00'}]
+            vfxEvents: [{ type: 'explosion', x: es.playerX, y: playerY, color: '#F00' }]
         };
     }
 
@@ -192,9 +192,9 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
     let newEnemies = [...prev.enemies];
     let newPickups = [...prev.pickups];
     let newCoins = [...prev.coins];
-    let newWalls = [...prev.walls]; 
+    let newWalls = [...prev.walls];
     let currentVfx: VfxEvent[] = [];
-    
+
     let currentUpgrades = prev.activeUpgrades;
     let currentBuffs = { ...prev.buffs };
     let newScore = prev.score;
@@ -214,19 +214,19 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
     const triggerGameOver = (reason: string, impactX: number, impactY: number, extraVfx: VfxEvent[] = []) => {
         ctx.playSfx('game_over');
-        
+
         // Disintegrate whatever snake we currently have
         // Since snake construction happens later, we use prev.snake here for debris source
         const bodyDebris = disintegrateSnake(prev.snake);
         const impactDebris: VfxEvent = { type: 'explosion', x: impactX, y: impactY, color: '#FF0033' };
 
         return {
-            newState: { 
-                ...prev, 
-                status: 'gameover' as const, 
+            newState: {
+                ...prev,
+                status: 'gameover' as const,
                 gameOverReason: reason,
                 gameOverTimestamp: ctx.timestamp,
-                snake: [], 
+                snake: [],
                 stats: newStats,
                 score: newScore
             },
@@ -241,13 +241,13 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         if (ctx.timestamp - lastTrapMoveTime > 10000) {
             newWalls = newWalls.map(w => {
                 if (w.type === 'trap') {
-                    const dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
+                    const dirs = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
                     const dir = dirs[Math.floor(Math.random() * dirs.length)];
                     const tx = w.x + dir.x;
                     const ty = w.y + dir.y;
-                    if (tx > 0 && tx < BOARD_WIDTH_CELLS-1 && ty > 0 && ty < BOARD_HEIGHT_CELLS-1) {
-                         const collision = checkCollisionWithWalls(tx, ty, prev.walls);
-                         if (!collision) return { ...w, x: tx, y: ty };
+                    if (tx > 0 && tx < BOARD_WIDTH_CELLS - 1 && ty > 0 && ty < BOARD_HEIGHT_CELLS - 1) {
+                        const collision = checkCollisionWithWalls(tx, ty, prev.walls);
+                        if (!collision) return { ...w, x: tx, y: ty };
                     }
                 }
                 return w;
@@ -266,8 +266,8 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
             if (dist < range && dist > 1) {
                 const dx = prev.snake[0].x - c.x;
                 const dy = prev.snake[0].y - c.y;
-                const speed = 1.5; 
-                c.x += Math.sign(dx) * speed; 
+                const speed = 1.5;
+                c.x += Math.sign(dx) * speed;
                 c.y += Math.sign(dy) * speed;
             }
         });
@@ -280,19 +280,19 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
     if (prev.activeModifiers.some(m => m.type === 'magnetic_wall')) {
         const h = prev.snake[0];
         let nearestDist = Infinity;
-        let bias = {x: 0, y: 0};
-        
-        for(let dy = -3; dy <= 3; dy++) {
-            for(let dx = -3; dx <= 3; dx++) {
+        let bias = { x: 0, y: 0 };
+
+        for (let dy = -3; dy <= 3; dy++) {
+            for (let dx = -3; dx <= 3; dx++) {
                 if (dx === 0 && dy === 0) continue;
                 const tx = h.x + dx;
                 const ty = h.y + dy;
                 if (checkCollisionWithWalls(tx, ty, prev.walls)) {
-                     const dist = Math.abs(dx) + Math.abs(dy); // Manhattan
-                     if (dist < nearestDist) {
-                         nearestDist = dist;
-                         bias = {x: Math.sign(dx), y: Math.sign(dy)};
-                     }
+                    const dist = Math.abs(dx) + Math.abs(dy); // Manhattan
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        bias = { x: Math.sign(dx), y: Math.sign(dy) };
+                    }
                 }
             }
         }
@@ -300,8 +300,8 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         if (nearestDist <= 3) {
             if (Math.random() < 0.15) {
                 if ((moveDir.x !== 0 && bias.y !== 0) || (moveDir.y !== 0 && bias.x !== 0)) {
-                     if (moveDir.x !== 0) moveDir = { x: 0, y: bias.y };
-                     else moveDir = { x: bias.x, y: 0 };
+                    if (moveDir.x !== 0) moveDir = { x: 0, y: bias.y };
+                    else moveDir = { x: bias.x, y: 0 };
                 }
             }
         }
@@ -309,10 +309,10 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
     const currentHead = prev.snake[0];
     let newHeadPosition = { x: currentHead.x + moveDir.x, y: currentHead.y + moveDir.y };
-    
+
     // --- GATE WARP LOGIC (Updates newHeadPosition) ---
     const wallCollision = prev.walls.find(w => newHeadPosition.x >= w.x && newHeadPosition.x < w.x + w.width && newHeadPosition.y >= w.y && newHeadPosition.y < w.y + w.height);
-    
+
     if (wallCollision && wallCollision.type === 'gate') {
         let targetWalls: Wall[] = [];
         if (wallCollision.gateChannel !== undefined && wallCollision.gateChannel !== -1) {
@@ -331,32 +331,32 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         }
 
         if (targetWalls.length > 0) {
-             let isHorizontal = false;
-             let isVertical = false;
-             
-             if (targetWalls.length > 1) {
-                 const xs = targetWalls.map(w => w.x);
-                 const ys = targetWalls.map(w => w.y);
-                 const minX = Math.min(...xs), maxX = Math.max(...xs);
-                 const minY = Math.min(...ys), maxY = Math.max(...ys);
-                 if (maxX > minX) isHorizontal = true;
-                 if (maxY > minY) isVertical = true; 
-             } else {
-                 const g = targetWalls[0];
-                 const hasHorzNeighbor = prev.walls.some(w => w !== g && w.y === g.y && Math.abs(w.x - g.x) === 1);
-                 const hasVertNeighbor = prev.walls.some(w => w !== g && w.x === g.x && Math.abs(w.y - g.y) === 1);
-                 if (hasHorzNeighbor) isHorizontal = true;
-                 if (hasVertNeighbor) isVertical = true;
-             }
-             
-            let candidates: {x: number, y: number, dir: Point, score: number}[] = [];
+            let isHorizontal = false;
+            let isVertical = false;
+
+            if (targetWalls.length > 1) {
+                const xs = targetWalls.map(w => w.x);
+                const ys = targetWalls.map(w => w.y);
+                const minX = Math.min(...xs), maxX = Math.max(...xs);
+                const minY = Math.min(...ys), maxY = Math.max(...ys);
+                if (maxX > minX) isHorizontal = true;
+                if (maxY > minY) isVertical = true;
+            } else {
+                const g = targetWalls[0];
+                const hasHorzNeighbor = prev.walls.some(w => w !== g && w.y === g.y && Math.abs(w.x - g.x) === 1);
+                const hasVertNeighbor = prev.walls.some(w => w !== g && w.x === g.x && Math.abs(w.y - g.y) === 1);
+                if (hasHorzNeighbor) isHorizontal = true;
+                if (hasVertNeighbor) isVertical = true;
+            }
+
+            let candidates: { x: number, y: number, dir: Point, score: number }[] = [];
 
             targetWalls.forEach(g => {
                 const potential = [
-                    {x: g.x+1, y: g.y, dir: {x: 1, y: 0}},
-                    {x: g.x-1, y: g.y, dir: {x: -1, y: 0}},
-                    {x: g.x, y: g.y+1, dir: {x: 0, y: 1}},
-                    {x: g.x, y: g.y-1, dir: {x: 0, y: -1}}
+                    { x: g.x + 1, y: g.y, dir: { x: 1, y: 0 } },
+                    { x: g.x - 1, y: g.y, dir: { x: -1, y: 0 } },
+                    { x: g.x, y: g.y + 1, dir: { x: 0, y: 1 } },
+                    { x: g.x, y: g.y - 1, dir: { x: 0, y: -1 } }
                 ];
 
                 potential.forEach(p => {
@@ -365,8 +365,8 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                         if (isHorizontal && !isVertical && p.dir.y === 0) return;
                         if (isVertical && !isHorizontal && p.dir.x === 0) return;
                         const dot = (p.dir.x * ctx.direction.x) + (p.dir.y * ctx.direction.y);
-                        const score = dot + 1; 
-                        candidates.push({...p, score});
+                        const score = dot + 1;
+                        candidates.push({ ...p, score });
                     }
                 });
             });
@@ -379,8 +379,8 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
                 newHeadPosition.x = chosen.x;
                 newHeadPosition.y = chosen.y;
-                moveDir = chosen.dir; 
-                forceDirectionUpdate = chosen.dir; 
+                moveDir = chosen.dir;
+                forceDirectionUpdate = chosen.dir;
 
                 ctx.playSfx('portal_enter');
                 currentVfx.push({ type: 'explosion', x: currentHead.x, y: currentHead.y, color: '#00FFFF' });
@@ -391,29 +391,29 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
     // --- PHASE 1: LOGIC RESOLUTION (Pickups, Damage, Grow State) ---
     // We determine snake structure modifications BEFORE moving segments
-    
+
     let snakeAction: 'move' | 'grow' = 'move';
     let growthType: ItemType | undefined = undefined;
     let fillIndices: number[] = [];
     let unfillIndices: number[] = [];
-    
+
     const pIndex = newPickups.findIndex(p => Math.round(p.x) === newHeadPosition.x && Math.round(p.y) === newHeadPosition.y);
     if (pIndex !== -1) {
         const pickup = newPickups[pIndex];
-        
+
         // Handle Boss Pickups (Non-Snake logic)
         if (pickup.itemType === 'chronos_anchor' || pickup.itemType === 'omega_particle') {
-             // Logic handled later in Boss section
+            // Logic handled later in Boss section
         }
         else if (pickup.itemType === 'stasis_orb') {
             ctx.playSfx('powerup');
             const stasisUpgrade = currentUpgrades.find(u => u.type === 'stasis');
-            const duration = stasisUpgrade ? 10000 + ((stasisUpgrade.level-1) * 2000) : 10000;
+            const duration = stasisUpgrade ? 10000 + ((stasisUpgrade.level - 1) * 2000) : 10000;
             currentBuffs.stasisUntil = ctx.timestamp + duration;
             currentVfx.push({ type: 'explosion', x: pickup.x, y: pickup.y, color: '#FFD700' });
             newPickups.splice(pIndex, 1);
             if (!prev.isTesting) ctx.unlockCallback('stasis_field');
-        } 
+        }
         else if (pickup.itemType === 'shield') {
             const maxShields = currentUpgrades.find(u => u.type === 'chassis')?.level || 0;
             if (currentBuffs.currentShields < maxShields) {
@@ -421,42 +421,42 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                 currentBuffs.currentShields++;
                 currentVfx.push({ type: 'heal', x: pickup.x, y: pickup.y });
             } else {
-                 ctx.playSfx('pickup_coin');
-                 newScore += 50;
-                 currentVfx.push({ type: 'explosion', x: pickup.x, y: pickup.y, color: '#39FF14' });
+                ctx.playSfx('pickup_coin');
+                newScore += 50;
+                currentVfx.push({ type: 'explosion', x: pickup.x, y: pickup.y, color: '#39FF14' });
             }
             newPickups.splice(pIndex, 1);
         }
         else {
             // Standard Matter Logic
             const pType = pickup.itemType as ItemType;
-            
+
             // Stats
             if (currentUpgrades.some(u => u.type === 'phase')) {
                 if (pType === 'alpha') newStats.alphaChain++; else newStats.alphaChain = 0;
-                if (newStats.alphaChain >= 3) { 
+                if (newStats.alphaChain >= 3) {
                     ctx.playSfx('powerup');
-                    currentBuffs.invulnerableUntil = ctx.timestamp + 5000; newStats.alphaChain = 0; 
+                    currentBuffs.invulnerableUntil = ctx.timestamp + 5000; newStats.alphaChain = 0;
                     currentVfx.push({ type: 'shield_break', x: pickup.x, y: pickup.y });
                 }
             }
             if (currentUpgrades.some(u => u.type === 'volatile')) {
                 if (pType === 'beta') newStats.betaCount++;
-                if (newStats.betaCount >= 3) { 
+                if (newStats.betaCount >= 3) {
                     ctx.playSfx('explosion');
-                    newStats.betaCount = 0; newEnemies = []; 
+                    newStats.betaCount = 0; newEnemies = [];
                     currentVfx.push({ type: 'emp', x: pickup.x, y: pickup.y });
                     // Respawn logic handled elsewhere
                 }
             }
             if (currentUpgrades.some(u => u.type === 'weaver')) {
                 if (pType === 'gamma') newStats.gammaCount++;
-                if (newStats.gammaCount >= 3) { 
+                if (newStats.gammaCount >= 3) {
                     ctx.playSfx('powerup');
-                    newStats.gammaCount = 0; 
+                    newStats.gammaCount = 0;
                     // Auto-fill logic handled below? No, special Weaver auto-fill needs manual scan
-                    const unchargedIdx = prev.snake.findIndex(s => s.type === 'body' && !s.isCharged); 
-                    if (unchargedIdx !== -1) { 
+                    const unchargedIdx = prev.snake.findIndex(s => s.type === 'body' && !s.isCharged);
+                    if (unchargedIdx !== -1) {
                         fillIndices.push(unchargedIdx);
                         currentVfx.push({ type: 'heal', x: prev.snake[unchargedIdx].x, y: prev.snake[unchargedIdx].y });
                     }
@@ -470,23 +470,23 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
             // CHECK FILL vs GROW
             let didFill = false;
             // Iterate prev.snake from tail to head
-            for(let i = prev.snake.length - 1; i > 0; i--) {
+            for (let i = prev.snake.length - 1; i > 0; i--) {
                 const s = prev.snake[i];
                 if (!s.isCharged && s.variant === pType && !fillIndices.includes(i)) {
                     fillIndices.push(i);
                     currentVfx.push({ type: 'fill', x: pickup.x, y: pickup.y, color: '#00F0FF' });
                     currentVfx.push({ type: 'heal', x: s.x, y: s.y });
                     didFill = true;
-                    
+
                     // Replicator
                     const replicator = currentUpgrades.find(u => u.type === 'replicator');
                     if (replicator && Math.random() * 100 < replicator.value) {
-                        const randType = ['alpha', 'beta', 'gamma'][Math.floor(Math.random()*3)] as ItemType;
+                        const randType = ['alpha', 'beta', 'gamma'][Math.floor(Math.random() * 3)] as ItemType;
                         let valid = false, attempts = 0;
-                        while(!valid && attempts < 10) {
+                        while (!valid && attempts < 10) {
                             const rx = currentHead.x + Math.floor(Math.random() * 10) - 5;
                             const ry = currentHead.y + Math.floor(Math.random() * 10) - 5;
-                            if (rx > 0 && rx < BOARD_WIDTH_CELLS-1 && ry > 0 && ry < BOARD_HEIGHT_CELLS-1) {
+                            if (rx > 0 && rx < BOARD_WIDTH_CELLS - 1 && ry > 0 && ry < BOARD_HEIGHT_CELLS - 1) {
                                 newPickups.push({ id: `rep-${Math.random()}`, x: rx, y: ry, itemType: randType });
                                 valid = true;
                                 currentVfx.push({ type: 'heal', x: rx, y: ry });
@@ -494,7 +494,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                             attempts++;
                         }
                     }
-                    
+
                     // Wireless
                     const wireless = currentUpgrades.find(u => u.type === 'wireless');
                     if (!wireless || wireless.level <= 1) break; // Only 1 fill per item
@@ -507,7 +507,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                 const mult = greed ? 1 + (greed.level * 0.1) : 1;
                 newScore += Math.floor(50 * mult);
                 newPickups.splice(pIndex, 1);
-                
+
                 if (prev.level === 0 && ctx.tutorialStep === 3) {
                     nextTutorialStep = 4;
                     const spawnY = Math.floor(BOARD_HEIGHT_CELLS * 0.5);
@@ -526,7 +526,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                     } else {
                         // Unfill logic
                         let foundToUnfill = false;
-                        for(let i = prev.snake.length - 1; i > 0; i--) {
+                        for (let i = prev.snake.length - 1; i > 0; i--) {
                             if (prev.snake[i].isCharged && !unfillIndices.includes(i)) {
                                 unfillIndices.push(i);
                                 currentVfx.push({ type: 'explosion', x: prev.snake[i].x, y: prev.snake[i].y, color: '#FF0033' });
@@ -534,7 +534,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                                 break; // Only lose 1
                             }
                         }
-                        
+
                         if (foundToUnfill) {
                             ctx.playSfx('damage');
                             const agility = currentUpgrades.find(u => u.type === 'agility');
@@ -555,14 +555,14 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                     snakeAction = 'grow';
                     growthType = pType;
                     ctx.playSfx('pickup_good');
-                    
+
                     const greed = currentUpgrades.find(u => u.type === 'greed');
                     const mult = greed ? 1 + (greed.level * 0.1) : 1;
                     newScore += Math.floor(10 * mult);
                     newPickups.splice(pIndex, 1);
-                    
+
                     if (prev.level === 0 && ctx.tutorialStep === 1) {
-                        nextTutorialStep = 2; 
+                        nextTutorialStep = 2;
                         const spawnY = Math.floor(BOARD_HEIGHT_CELLS * 0.2);
                         const spawnX = Math.floor(BOARD_WIDTH_CELLS / 2);
                         newPickups.push({ id: 'tut-beta-danger', x: spawnX - 5, y: spawnY + 10, itemType: 'beta' });
@@ -574,14 +574,14 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
     }
 
     // --- PHASE 2: CONSTRUCTION ---
-    const headSegment: Segment = { 
-        ...newHeadPosition, 
-        id: `head-${ctx.timestamp}`, 
-        isCharged: false, 
+    const headSegment: Segment = {
+        ...newHeadPosition,
+        id: `head-${ctx.timestamp}`,
+        isCharged: false,
         type: 'head',
-        createdAt: ctx.timestamp 
+        createdAt: ctx.timestamp
     };
-    
+
     // Always move existing body segments to follow the chain
     // Map prev.snake[1] -> prev.snake[0] position
     const movedBody = prev.snake.slice(1).map((seg, i) => ({
@@ -628,7 +628,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
     if (collided) {
         const stabilizer = currentUpgrades.find(u => u.type === 'stabilizer');
         const isTrap = wallCollision?.type === 'trap';
-        
+
         if (stabilizer && !isTrap) {
             ctx.playSfx('shield_deflect');
             // Revert head (Bounce back visual)
@@ -670,19 +670,19 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         boss = bossUpdate.boss;
         currentVfx.push(...bossUpdate.vfx);
         newPickups.push(...bossUpdate.pickupsToAdd);
-        
+
         // Pickups handling for Rival/Timekeeper logic specifically requiring removal
         if (boss?.type === 'rival') {
-             for (let i = newPickups.length - 1; i >= 0; i--) {
+            for (let i = newPickups.length - 1; i >= 0; i--) {
                 const p = newPickups[i];
                 if (p.itemType === 'omega_particle' && getDistance(boss, p) < 1) newPickups.splice(i, 1);
             }
         }
         if (boss?.type === 'timekeeper') {
-             for (let i = newPickups.length - 1; i >= 0; i--) {
+            for (let i = newPickups.length - 1; i >= 0; i--) {
                 const p = newPickups[i];
                 if (p.itemType === 'chronos_anchor' && p.expiresAt && p.expiresAt < ctx.timestamp) {
-                    currentVfx.push({type: 'explosion', x: p.x, y: p.y, color: '#FF0000'});
+                    currentVfx.push({ type: 'explosion', x: p.x, y: p.y, color: '#FF0000' });
                     newPickups.splice(i, 1);
                 }
             }
@@ -692,7 +692,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
             let damageRemaining = bossUpdate.damageToPlayer;
             let damageTakenCount = 0;
             // Search backwards for charged segments to sacrifice
-            for(let i = nextSnakeState.length - 1; i > 0; i--) {
+            for (let i = nextSnakeState.length - 1; i > 0; i--) {
                 if (damageRemaining <= 0) break;
                 if (nextSnakeState[i].type === 'body' && nextSnakeState[i].isCharged) {
                     nextSnakeState[i].isCharged = false;
@@ -708,10 +708,10 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                 const integrityEcho = currentUpgrades.find(u => u.type === 'integrity_echo');
                 const bonusTime = (agility ? (agility.level * 1000) : 0) + (integrityEcho ? integrityEcho.value : 0);
                 currentBuffs.invulnerableUntil = ctx.timestamp + 2000 + bonusTime;
-                
+
                 if (damageRemaining > 0) {
-                     ctx.playSfx('wall_crash');
-                     return triggerGameOver(`CRITICAL FAILURE: HULL DEPLETED`, nextSnakeState[0].x, nextSnakeState[0].y);
+                    ctx.playSfx('wall_crash');
+                    return triggerGameOver(`CRITICAL FAILURE: HULL DEPLETED`, nextSnakeState[0].x, nextSnakeState[0].y);
                 }
             } else {
                 ctx.playSfx('wall_crash');
@@ -722,7 +722,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         if (bossUpdate.isBossDead) {
             boss = undefined;
             ctx.playSfx('powerup');
-            portal = { x: Math.floor(BOARD_WIDTH_CELLS/2), y: Math.floor(BOARD_HEIGHT_CELLS/2), createdAt: ctx.timestamp };
+            portal = { x: Math.floor(BOARD_WIDTH_CELLS / 2), y: Math.floor(BOARD_HEIGHT_CELLS / 2), createdAt: ctx.timestamp };
             currentVfx.push({ type: 'emp', x: portal.x, y: portal.y });
             newScore += 5000;
         }
@@ -730,7 +730,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
     // --- ENEMY LOGIC ---
     const isStasisActive = currentBuffs.stasisUntil > ctx.timestamp;
-    const movedEnemies = moveEnemies(newEnemies, headSegment, prev.walls, isStasisActive);
+    const movedEnemies = moveEnemies(newEnemies, headSegment, prev.walls, isStasisActive, ctx.timestamp);
     newEnemies = movedEnemies;
 
     // Head vs Enemy Hit
@@ -742,19 +742,28 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         if (isInvulnerable) {
             ctx.playSfx('explosion');
             currentVfx.push({ type: 'explosion', x: e.x, y: e.y, color: e.color });
-            newEnemies.splice(headHitIndex, 1); 
+            if (e.type === 'splitter') {
+                // Split into two faster wanderers
+                const s1 = createEnemy('wanderer', e.x, e.y, 'split');
+                const s2 = createEnemy('wanderer', e.x, e.y, 'split');
+                s1.moveSpeed = 2; // Extra fast
+                s2.moveSpeed = 2;
+                newEnemies.push(s1, s2);
+            }
+
+            newEnemies.splice(headHitIndex, 1);
             newScore += 100;
             // Replication/Respawn logic...
             if (prev.activeModifiers.some(m => m.type === 'enemy_replication')) {
-                 // ... spawn static
+                // ... spawn static
             }
             if (prev.level !== 0 && !boss) {
-                 const lvlData = prev.activeLevelConfig || getLevelData(prev.level);
-                 const parsed = parseLevel(lvlData);
-                 const newEnemy = spawnRandomEnemy(nextSnakeState, prev.walls, parsed.config.enemyTypes);
-                 newEnemies.push(newEnemy);
-                 if (!prev.isTesting) ctx.unlockCallback(newEnemy.type);
-                 newCoins = [...newCoins, ...spawnCoins(Math.floor(Math.random()*3)+1, nextSnakeState, prev.walls, [])];
+                const lvlData = prev.activeLevelConfig || getLevelData(prev.level);
+                const parsed = parseLevel(lvlData);
+                const newEnemy = spawnRandomEnemy(nextSnakeState, prev.walls, parsed.config.enemyTypes);
+                newEnemies.push(newEnemy);
+                if (!prev.isTesting) ctx.unlockCallback(newEnemy.type);
+                newCoins = [...newCoins, ...spawnCoins(Math.floor(Math.random() * 3) + 1, nextSnakeState, prev.walls, [])];
             }
         } else {
             if (currentBuffs.currentShields > 0) {
@@ -764,41 +773,41 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                 newEnemies.splice(headHitIndex, 1);
                 // Respawn
                 if (prev.level !== 0 && !boss) {
-                     const lvlData = prev.activeLevelConfig || getLevelData(prev.level);
-                     const parsed = parseLevel(lvlData);
-                     const newEnemy = spawnRandomEnemy(nextSnakeState, prev.walls, parsed.config.enemyTypes);
-                     newEnemies.push(newEnemy);
+                    const lvlData = prev.activeLevelConfig || getLevelData(prev.level);
+                    const parsed = parseLevel(lvlData);
+                    const newEnemy = spawnRandomEnemy(nextSnakeState, prev.walls, parsed.config.enemyTypes);
+                    newEnemies.push(newEnemy);
                 }
             } else {
                 let damageTaken = false;
-                for(let i = nextSnakeState.length - 1; i > 0; i--) {
-                    if (nextSnakeState[i].isCharged) { 
+                for (let i = nextSnakeState.length - 1; i > 0; i--) {
+                    if (nextSnakeState[i].isCharged) {
                         nextSnakeState[i].isCharged = false;
-                        damageTaken = true; 
+                        damageTaken = true;
                         ctx.playSfx('damage');
                         currentVfx.push({ type: 'explosion', x: nextSnakeState[i].x, y: nextSnakeState[i].y, color: '#FF0033' });
-                        newEnemies.splice(headHitIndex, 1); 
+                        newEnemies.splice(headHitIndex, 1);
                         if (!ctx.seenHpTutorial) shouldTriggerHpTutorial = true;
-                        
+
                         // Respawn
                         if (prev.level !== 0 && !boss) {
-                             const lvlData = prev.activeLevelConfig || getLevelData(prev.level);
-                             const parsed = parseLevel(lvlData);
-                             const newEnemy = spawnRandomEnemy(nextSnakeState, prev.walls, parsed.config.enemyTypes);
-                             newEnemies.push(newEnemy);
+                            const lvlData = prev.activeLevelConfig || getLevelData(prev.level);
+                            const parsed = parseLevel(lvlData);
+                            const newEnemy = spawnRandomEnemy(nextSnakeState, prev.walls, parsed.config.enemyTypes);
+                            newEnemies.push(newEnemy);
                         }
 
                         const agility = currentUpgrades.find(u => u.type === 'agility');
                         const integrityEcho = currentUpgrades.find(u => u.type === 'integrity_echo');
                         const bonusTime = (agility ? (agility.level * 1000) : 0) + (integrityEcho ? integrityEcho.value : 0);
                         currentBuffs.invulnerableUntil = ctx.timestamp + 2000 + bonusTime;
-                        break; 
+                        break;
                     }
                 }
                 if (!damageTaken) {
                     if (prev.level === 0) return handleTutorialRespawn(prev, currentVfx, ctx, 98);
                     ctx.playSfx('wall_crash');
-                    return triggerGameOver('CRITICAL FAILURE: HULL BREACH', headSegment.x, headSegment.y, [{type: 'explosion', x: headSegment.x, y: headSegment.y, color: '#F00'}]);
+                    return triggerGameOver('CRITICAL FAILURE: HULL BREACH', headSegment.x, headSegment.y, [{ type: 'explosion', x: headSegment.x, y: headSegment.y, color: '#F00' }]);
                 }
             }
         }
@@ -809,12 +818,12 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
     if (selfHitIdx !== -1) {
         if (prev.level === 0) return handleTutorialRespawn(prev, currentVfx, ctx, 98);
         if (prev.activeModifiers.some(m => m.type === 'head_trauma')) {
-             return triggerGameOver('CRASH: SELF_INTERSECTION', headSegment.x, headSegment.y, [{type: 'impact', x: headSegment.x, y: headSegment.y}]);
+            return triggerGameOver('CRASH: SELF_INTERSECTION', headSegment.x, headSegment.y, [{ type: 'impact', x: headSegment.x, y: headSegment.y }]);
         } else {
-             ctx.playSfx('damage');
-             const cutSegment = nextSnakeState[selfHitIdx];
-             currentVfx.push({ type: 'explosion', x: cutSegment.x, y: cutSegment.y, color: '#FF0033' });
-             nextSnakeState = nextSnakeState.slice(0, selfHitIdx);
+            ctx.playSfx('damage');
+            const cutSegment = nextSnakeState[selfHitIdx];
+            currentVfx.push({ type: 'explosion', x: cutSegment.x, y: cutSegment.y, color: '#FF0033' });
+            nextSnakeState = nextSnakeState.slice(0, selfHitIdx);
         }
     }
 
@@ -829,15 +838,15 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
     const prevCharged = prev.snake.filter(s => s.type === 'body' && s.isCharged && s.variant).map(s => s.variant!);
     const prevMatched = prev.requiredSequence.length > 0 && prevCharged.join(',').includes(prev.requiredSequence.join(','));
     if (!prevMatched && sequenceMatched) ctx.playSfx('sequence_match');
-    
+
     // Apply Sequence visual flag
     nextSnakeState.forEach(s => s.isSequencePart = false);
     if (sequenceMatched) {
         const chargedBodies = nextSnakeState.filter(s => s.type === 'body' && s.isCharged && s.variant);
-        for(let i=0; i <= chargedBodies.length - prev.requiredSequence.length; i++) {
+        for (let i = 0; i <= chargedBodies.length - prev.requiredSequence.length; i++) {
             let match = true;
-            for(let j=0; j < prev.requiredSequence.length; j++) { if (chargedBodies[i+j].variant !== prev.requiredSequence[j]) { match = false; break; } }
-            if (match) { for(let j=0; j < prev.requiredSequence.length; j++) chargedBodies[i+j].isSequencePart = true; }
+            for (let j = 0; j < prev.requiredSequence.length; j++) { if (chargedBodies[i + j].variant !== prev.requiredSequence[j]) { match = false; break; } }
+            if (match) { for (let j = 0; j < prev.requiredSequence.length; j++) chargedBodies[i + j].isSequencePart = true; }
         }
     }
 
@@ -846,13 +855,13 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
     if (chargedCount >= prev.targetIntegrity + 5 && !secretPortal && prev.level !== 0 && !boss) {
         const p = spawnPortal(nextSnakeState, prev.walls, getDistance);
         secretPortal = { ...p, createdAt: ctx.timestamp };
-        ctx.playSfx('powerup'); 
+        ctx.playSfx('powerup');
     }
     if (secretPortal && ctx.timestamp - secretPortal.createdAt > 10000) secretPortal = undefined;
 
     if (!boss && chargedCount >= prev.targetIntegrity && !portal) {
         if (prev.level === 0) {
-            if (nextTutorialStep < 6) { nextTutorialStep = 6; portal = { x: Math.floor(BOARD_WIDTH_CELLS/2), y: Math.floor(BOARD_HEIGHT_CELLS/2), createdAt: ctx.timestamp }; ctx.playSfx('sequence_match'); }
+            if (nextTutorialStep < 6) { nextTutorialStep = 6; portal = { x: Math.floor(BOARD_WIDTH_CELLS / 2), y: Math.floor(BOARD_HEIGHT_CELLS / 2), createdAt: ctx.timestamp }; ctx.playSfx('sequence_match'); }
         } else {
             const spawnPos = spawnPortal(nextSnakeState, prev.walls, getDistance);
             portal = { ...spawnPos, createdAt: ctx.timestamp };
@@ -880,7 +889,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
             let nextStatus: GameState['status'] = 'levelup';
             if (prev.level === 0) nextStatus = 'tutorial_summary';
             const choices = (prev.level !== 0) ? generateShopChoices(currentUpgrades) : [];
-            
+
             return {
                 newState: { ...prev, snake: nextSnakeState, pickups: newPickups, enemies: newEnemies, coins: newCoins, status: nextStatus, shop: { choices, freePickAvailable: true }, portal, score: newScore, walls: newWalls, lastTrapMoveTime, secretPortal, boss: undefined },
                 shouldTriggerHpTutorial, nextTutorialStep, vfxEvents: currentVfx
@@ -892,7 +901,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
             nextSnakeState[0].x = currentHead.x; nextSnakeState[0].y = currentHead.y; // Bounce
         } else {
             ctx.playSfx('wall_crash');
-            return triggerGameOver('CRASH: SEQUENCE MISMATCH', headSegment.x, headSegment.y, [{type: 'impact', x: headSegment.x, y: headSegment.y}]);
+            return triggerGameOver('CRASH: SEQUENCE MISMATCH', headSegment.x, headSegment.y, [{ type: 'impact', x: headSegment.x, y: headSegment.y }]);
         }
     }
 
@@ -913,7 +922,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         const s = nextSnakeState[i];
         if (!s.isCharged && s.variant) {
             activePendingType = s.variant;
-            break; 
+            break;
         }
     }
     let pendingType = activePendingType;
@@ -923,7 +932,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         newPickups = spawnPickupsIfNeeded(newPickups, nextSnakeState, prev.walls, currentUpgrades);
     }
     if (boss && prev.level !== 0 && newPickups.filter(p => ITEM_TYPES.includes(p.itemType as any)).length < 3) {
-         newPickups = spawnPickupsIfNeeded(newPickups, nextSnakeState, prev.walls, currentUpgrades);
+        newPickups = spawnPickupsIfNeeded(newPickups, nextSnakeState, prev.walls, currentUpgrades);
     }
 
     const newState: GameState = {

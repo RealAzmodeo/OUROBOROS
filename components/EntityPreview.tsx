@@ -33,8 +33,8 @@ export const EntityPreview: React.FC<EntityPreviewProps> = ({ id, category }) =>
             ctx.strokeStyle = '#2d3748';
             ctx.lineWidth = 1;
             ctx.beginPath();
-            for(let x = 0; x <= width; x += 20) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
-            for(let y = 0; y <= height; y += 20) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+            for (let x = 0; x <= width; x += 20) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+            for (let y = 0; y <= height; y += 20) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
             ctx.stroke();
 
             ctx.save();
@@ -54,57 +54,92 @@ export const EntityPreview: React.FC<EntityPreviewProps> = ({ id, category }) =>
                 if (id === 'static') {
                     // Triangle pointing up
                     ctx.beginPath();
-                    ctx.moveTo(0, -SIZE/2);
-                    ctx.lineTo(SIZE/2, SIZE/2);
-                    ctx.lineTo(-SIZE/2, SIZE/2);
+                    ctx.moveTo(0, -SIZE / 2);
+                    ctx.lineTo(SIZE / 2, SIZE / 2);
+                    ctx.lineTo(-SIZE / 2, SIZE / 2);
                     ctx.fill();
                 } else if (id === 'chaser') {
                     // Diamond / Kite
                     ctx.beginPath();
-                    ctx.moveTo(0, -SIZE/2);
-                    ctx.lineTo(SIZE/2, 0);
-                    ctx.lineTo(0, SIZE/2);
-                    ctx.lineTo(-SIZE/2, 0);
+                    ctx.moveTo(0, -SIZE / 2);
+                    ctx.lineTo(SIZE / 2, 0);
+                    ctx.lineTo(0, SIZE / 2);
+                    ctx.lineTo(-SIZE / 2, 0);
                     ctx.fill();
                 } else if (id === 'patrol') {
                     // Square with core
-                    ctx.fillRect(-SIZE/2, -SIZE/2, SIZE, SIZE);
+                    ctx.fillRect(-SIZE / 2, -SIZE / 2, SIZE, SIZE);
                     ctx.fillStyle = '#000';
-                    ctx.fillRect(-SIZE/4, -SIZE/4, SIZE/2, SIZE/2);
+                    ctx.fillRect(-SIZE / 4, -SIZE / 4, SIZE / 2, SIZE / 2);
+                } else if (id === 'ghost') {
+                    // Phantasm (Purple Floating Veil)
+                    ctx.fillStyle = '#AA00FF';
+                    ctx.shadowColor = '#AA00FF';
+                    ctx.globalAlpha = 0.6 + (Math.sin(now / 200) * 0.2);
+                    ctx.beginPath();
+                    ctx.moveTo(-SIZE / 2, SIZE / 2);
+                    ctx.quadraticCurveTo(0, -SIZE / 2, SIZE / 2, SIZE / 2);
+                    ctx.lineTo(SIZE / 2, 0);
+                    ctx.lineTo(-SIZE / 2, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Eyes
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(-6, -2, 3, 3);
+                    ctx.fillRect(3, -2, 3, 3);
+                } else if (id === 'replicator') {
+                    // Binary Spore (Pulsing teal circle)
+                    ctx.fillStyle = '#00FFCC';
+                    ctx.shadowColor = '#00FFCC';
+                    const pulse = Math.sin(now / 200) * 5;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, (SIZE / 2.5) + pulse, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#FFF';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, SIZE / 5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (id === 'splitter') {
+                    // Fragmenter (Orange cluster)
+                    ctx.fillStyle = '#FFAA00';
+                    ctx.shadowColor = '#FFAA00';
+                    ctx.beginPath(); ctx.arc(-10, -10, 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(10, -10, 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(0, 10, 8, 0, Math.PI * 2); ctx.fill();
                 } else {
                     // Wanderer / Default (Square)
-                    ctx.fillRect(-SIZE/2, -SIZE/2, SIZE, SIZE);
+                    ctx.fillRect(-SIZE / 2, -SIZE / 2, SIZE, SIZE);
                 }
-            } 
+            }
             else if (category === 'mechanic') {
                 const color = id === 'stasis_orb' ? '#FFD700' : '#00F0FF';
-                
+
                 if (id === 'portal') {
                     // Use shared drawPortal util
                     // We need to undo translate since drawPortal takes absolute coords
-                    ctx.restore(); 
+                    ctx.restore();
                     drawPortal(ctx, cx, cy + floatY, SIZE * 1.5, now, '#39FF14', true);
                     ctx.save(); // restore context stack state for cleanup
                 } else if (id === 'shield') {
                     // Shield Pickup (Green)
-                    ctx.fillStyle = '#39FF14'; 
+                    ctx.fillStyle = '#39FF14';
                     ctx.shadowColor = '#39FF14';
                     ctx.shadowBlur = 15;
-                    
+
                     ctx.beginPath();
-                    ctx.moveTo(0, SIZE/2); 
-                    ctx.quadraticCurveTo(SIZE/2, SIZE/3, SIZE/2, -SIZE/4);
-                    ctx.lineTo(SIZE/2, -SIZE/2);
-                    ctx.lineTo(-SIZE/2, -SIZE/2);
-                    ctx.lineTo(-SIZE/2, -SIZE/4);
-                    ctx.quadraticCurveTo(-SIZE/2, SIZE/3, 0, SIZE/2);
+                    ctx.moveTo(0, SIZE / 2);
+                    ctx.quadraticCurveTo(SIZE / 2, SIZE / 3, SIZE / 2, -SIZE / 4);
+                    ctx.lineTo(SIZE / 2, -SIZE / 2);
+                    ctx.lineTo(-SIZE / 2, -SIZE / 2);
+                    ctx.lineTo(-SIZE / 2, -SIZE / 4);
+                    ctx.quadraticCurveTo(-SIZE / 2, SIZE / 3, 0, SIZE / 2);
                     ctx.closePath();
                     ctx.fill();
-                    
+
                     // Shine
                     ctx.fillStyle = 'rgba(255,255,255,0.5)';
                     ctx.beginPath();
-                    ctx.arc(SIZE/4, -SIZE/4, SIZE/6, 0, Math.PI*2);
+                    ctx.arc(SIZE / 4, -SIZE / 4, SIZE / 6, 0, Math.PI * 2);
                     ctx.fill();
                 } else {
                     // Items
@@ -114,33 +149,33 @@ export const EntityPreview: React.FC<EntityPreviewProps> = ({ id, category }) =>
 
                     if (id === 'alpha') {
                         ctx.beginPath();
-                        ctx.arc(0, 0, SIZE/2, 0, Math.PI*2);
+                        ctx.arc(0, 0, SIZE / 2, 0, Math.PI * 2);
                         ctx.fill();
                     } else if (id === 'beta') {
-                        ctx.fillRect(-SIZE/2, -SIZE/2, SIZE, SIZE);
+                        ctx.fillRect(-SIZE / 2, -SIZE / 2, SIZE, SIZE);
                     } else if (id === 'gamma') {
                         ctx.beginPath();
-                        ctx.moveTo(0, -SIZE/2);
-                        ctx.lineTo(SIZE/2, 0);
-                        ctx.lineTo(0, SIZE/2);
-                        ctx.lineTo(-SIZE/2, 0);
+                        ctx.moveTo(0, -SIZE / 2);
+                        ctx.lineTo(SIZE / 2, 0);
+                        ctx.lineTo(0, SIZE / 2);
+                        ctx.lineTo(-SIZE / 2, 0);
                         ctx.fill();
                     } else if (id === 'stasis_orb') {
                         // Atom Ring Effect
                         const time = now / 500;
                         ctx.beginPath();
-                        ctx.arc(0, 0, SIZE/3, 0, Math.PI*2);
+                        ctx.arc(0, 0, SIZE / 3, 0, Math.PI * 2);
                         ctx.fill();
-                        
+
                         ctx.strokeStyle = color;
                         ctx.lineWidth = 2;
-                        
+
                         ctx.beginPath();
-                        ctx.ellipse(0, 0, SIZE/1.5, SIZE/4, time, 0, Math.PI*2);
+                        ctx.ellipse(0, 0, SIZE / 1.5, SIZE / 4, time, 0, Math.PI * 2);
                         ctx.stroke();
-                        
+
                         ctx.beginPath();
-                        ctx.ellipse(0, 0, SIZE/1.5, SIZE/4, -time, 0, Math.PI*2);
+                        ctx.ellipse(0, 0, SIZE / 1.5, SIZE / 4, -time, 0, Math.PI * 2);
                         ctx.stroke();
                     }
                 }
@@ -156,10 +191,10 @@ export const EntityPreview: React.FC<EntityPreviewProps> = ({ id, category }) =>
 
     return (
         <div className="w-full h-32 mb-4 bg-black/50 border border-[#2d3748] rounded overflow-hidden relative">
-            <canvas 
-                ref={canvasRef} 
-                width={300} 
-                height={128} 
+            <canvas
+                ref={canvasRef}
+                width={300}
+                height={128}
                 className="w-full h-full block"
             />
         </div>

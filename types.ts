@@ -19,7 +19,7 @@ export interface Segment extends Point {
   createdAt?: number; // Timestamp of creation (for Rapid Decay)
 }
 
-export type EnemyType = 'static' | 'chaser' | 'patrol' | 'wanderer' | 'boss';
+export type EnemyType = 'static' | 'chaser' | 'patrol' | 'wanderer' | 'boss' | 'ghost' | 'replicator' | 'splitter';
 
 export interface Enemy extends Point {
   id: string;
@@ -30,31 +30,33 @@ export interface Enemy extends Point {
   dir: Point; // Current movement direction
   frozen?: boolean; // For stasis
   trail: Point[]; // History of last positions for visual trails
+  spawnedAt?: number; // For Replicator cooldown
+  life?: number; // For Splitter generations or health
 }
 
 export type BossType = 'cipher' | 'timekeeper' | 'colossus' | 'rival';
 
 export interface Boss extends Point {
-    id: string;
-    name: string;
-    type: BossType;
-    hp: number;
-    maxHp: number;
-    phase: number;
-    width: number;
-    height: number;
-    lastMove: number; // Timestamp of last movement
-    // Cipher Data
-    requiredSequence?: ItemType[];
-    // Rival Data
-    rivalScore?: number;
-    // Timekeeper Data
-    nextSpawnTime?: number;
+  id: string;
+  name: string;
+  type: BossType;
+  hp: number;
+  maxHp: number;
+  phase: number;
+  width: number;
+  height: number;
+  lastMove: number; // Timestamp of last movement
+  // Cipher Data
+  requiredSequence?: ItemType[];
+  // Rival Data
+  rivalScore?: number;
+  // Timekeeper Data
+  nextSpawnTime?: number;
 }
 
 export interface Pickup extends Point {
   id: string;
-  itemType: ItemType | SpecialItemType; 
+  itemType: ItemType | SpecialItemType;
   expiresAt?: number; // For Timekeeper mechanics
 }
 
@@ -80,13 +82,13 @@ export interface Wall extends Point {
   gateChannel?: number; // -1 for Auto (G), 0-9 for Manual Channels
 }
 
-export type UpgradeType = 
-  | 'battery' | 'wireless' | 'chassis' | 'agility' 
-  | 'volatile' | 'phase' | 'weaver' 
+export type UpgradeType =
+  | 'battery' | 'wireless' | 'chassis' | 'agility'
+  | 'volatile' | 'phase' | 'weaver'
   | 'magnet' | 'greed' | 'stasis' | 'stabilizer' | 'focus'
   | 'harvester_alpha' | 'velocity_sync' | 'integrity_echo' | 'replicator';
 
-export type ModifierType = 
+export type ModifierType =
   | 'speed_boost' | 'extra_enemy' | 'extra_sequence' | 'extra_integrity' | 'enemy_speed' | 'portal_traps'
   | 'magnetic_wall' | 'sequence_corruption' | 'trap_migration' | 'flickering_matter'
   | 'rapid_decay' | 'enemy_replication' | 'head_trauma' | 'credit_scramble';
@@ -150,40 +152,40 @@ export interface ParsedLevel {
 // VFX EVENT SYSTEM
 export type VfxType = 'explosion' | 'pickup' | 'impact' | 'heal' | 'fill' | 'emp' | 'shield_break' | 'text_float';
 export interface VfxEvent {
-    type: VfxType;
-    x: number;
-    y: number;
-    color?: string;
+  type: VfxType;
+  x: number;
+  y: number;
+  color?: string;
 }
 
 export interface GameTickResult {
-    newState: GameState;
-    shouldTriggerHpTutorial: boolean;
-    nextTutorialStep: number;
-    tutorialError?: number;
-    resetInput?: boolean; 
-    forcedDirection?: Point;
-    vfxEvents: VfxEvent[]; // New: Return events instead of processing particles in state
+  newState: GameState;
+  shouldTriggerHpTutorial: boolean;
+  nextTutorialStep: number;
+  tutorialError?: number;
+  resetInput?: boolean;
+  forcedDirection?: Point;
+  vfxEvents: VfxEvent[]; // New: Return events instead of processing particles in state
 }
 
 export type TutorialHighlightType = 'snake' | 'alpha' | 'beta' | 'gamma' | 'enemy' | 'portal' | 'hud_goals' | 'hud_hp' | 'trap' | 'coin' | 'hud_sequence' | 'hud_integrity';
 
 export interface TutorialStep {
-    id: number;
-    title: string;
-    message: string;
-    position: 'center' | 'top' | 'bottom';
-    highlight?: TutorialHighlightType;
+  id: number;
+  title: string;
+  message: string;
+  position: 'center' | 'top' | 'bottom';
+  highlight?: TutorialHighlightType;
 }
 
 export interface EvasionState {
-    playerX: number; // Column 0-39
-    obstacles: { x: number, y: number, width: number, height: number }[];
-    coins: Point[];
-    timer: number; // ms remaining (starts at 20000)
-    spawnTimer: number; // ms until next row
-    gridOffset: number; // visual scroll
-    coinsCollected: number; // Track session winnings
+  playerX: number; // Column 0-39
+  obstacles: { x: number, y: number, width: number, height: number }[];
+  coins: Point[];
+  timer: number; // ms remaining (starts at 20000)
+  spawnTimer: number; // ms until next row
+  gridOffset: number; // visual scroll
+  coinsCollected: number; // Track session winnings
 }
 
 export interface GameState {

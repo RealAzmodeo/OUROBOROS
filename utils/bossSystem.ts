@@ -11,9 +11,9 @@ export const spawnBoss = (level: number): Boss => {
     // Determine boss based on level (Cycle: 5->Cipher, 10->Timekeeper, 15->Colossus, 20->Rival)
     const cycleIndex = (Math.floor(level / 5) - 1) % BOSS_TYPES.length;
     const type = BOSS_TYPES[cycleIndex];
-    
+
     // Spawn Boss on the RIGHT side (30, 15) to duel Player on LEFT (3, 15)
-    const cx = 30; 
+    const cx = 30;
     const cy = Math.floor(BOARD_HEIGHT_CELLS / 2); // 15
 
     let boss: Boss = {
@@ -74,7 +74,7 @@ export const spawnBoss = (level: number): Boss => {
 
 const generateRandomSequence = (length: number): ItemType[] => {
     const seq: ItemType[] = [];
-    for(let i=0; i<length; i++) {
+    for (let i = 0; i < length; i++) {
         seq.push(ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)]);
     }
     return seq;
@@ -82,12 +82,12 @@ const generateRandomSequence = (length: number): ItemType[] => {
 
 // Returns updated boss and any VFX events
 export const updateBoss = (
-    state: GameState, 
+    state: GameState,
     playerHead: Point,
     timestamp: number,
     playSfx: (key: string) => void
 ): { boss: Boss | undefined, vfx: VfxEvent[], pickupsToAdd: any[], damageToPlayer: number, isBossDead: boolean } => {
-    
+
     if (!state.boss) return { boss: undefined, vfx: [], pickupsToAdd: [], damageToPlayer: 0, isBossDead: false };
 
     let boss = { ...state.boss };
@@ -95,15 +95,15 @@ export const updateBoss = (
     const pickupsToAdd: any[] = [];
     let damageToPlayer = 0;
     let isBossDead = false;
-    
+
     // Calculate Boss Center for accurate positioning
-    const bossCenter = { 
-        x: boss.x + boss.width / 2, 
-        y: boss.y + boss.height / 2 
+    const bossCenter = {
+        x: boss.x + boss.width / 2,
+        y: boss.y + boss.height / 2
     };
 
     // Helper: Check AABB Collision (More accurate than center distance for square entities)
-    const checkAABB = (ent1: {x: number, y: number, width: number, height: number}, ent2: {x: number, y: number, width: number, height: number}) => {
+    const checkAABB = (ent1: { x: number, y: number, width: number, height: number }, ent2: { x: number, y: number, width: number, height: number }) => {
         // Simple AABB overlap
         return (
             ent1.x < ent2.x + ent2.width &&
@@ -119,11 +119,11 @@ export const updateBoss = (
     if (boss.type === 'cipher') {
         // A. Determine Vulnerability Status first to dictate movement
         let isVulnerable = false;
-        
+
         const chargedSegments = state.snake
             .filter(s => s.type === 'body' && s.isCharged && s.variant)
             .map(s => s.variant!);
-        
+
         if (chargedSegments.length >= (boss.requiredSequence?.length || 3)) {
             const tailSeq = chargedSegments.slice(-(boss.requiredSequence!.length));
             const match = tailSeq.every((val, i) => val === boss.requiredSequence![i]);
@@ -131,11 +131,10 @@ export const updateBoss = (
         }
 
         // B. Dynamic Speed based on HP (Damage makes it FASTER)
-        // Tuned to be manageable
-        const stepMap: Record<number, number> = { 
+        const stepMap: Record<number, number> = {
             3: 0.25, // Slow
-            2: 0.40, // Medium
-            1: 0.60  // Fast
+            2: 0.50, // Much faster
+            1: 0.85  // Very fast
         };
         const stepSize = stepMap[boss.hp] ?? 0.25;
 
@@ -157,7 +156,7 @@ export const updateBoss = (
                 // ESCAPE MODE: Move away from player
                 moveX *= -1;
                 moveY *= -1;
-                
+
                 // Jitter to avoid corner traps
                 if (Math.random() > 0.8) {
                     if (moveX !== 0) { moveY = (Math.random() > 0.5 ? 1 : -1); moveX = 0; }
@@ -189,30 +188,28 @@ export const updateBoss = (
                 boss.hp--;
                 playSfx('explosion');
                 vfx.push({ type: 'explosion', x: bossCenter.x, y: bossCenter.y, color: '#FF0000' });
-                
+
                 if (boss.hp <= 0) {
                     isBossDead = true;
                 } else {
-                    // BOSS GROWS
-                    boss.width += 1;
-                    boss.height += 1;
-                    
+                    // BOSS stays same size but resets sequence
+
                     // Reroll Sequence (Shields UP)
                     boss.requiredSequence = generateRandomSequence(3);
-                    
+
                     // TELEPORT AWAY
                     let safe = false;
                     let attempts = 0;
-                    while(!safe && attempts < 50) {
+                    while (!safe && attempts < 50) {
                         const margin = 2;
                         const maxX = BOARD_WIDTH_CELLS - boss.width - margin;
                         const maxY = BOARD_HEIGHT_CELLS - boss.height - margin;
-                        
+
                         const randX = Math.floor(Math.random() * (maxX - margin)) + margin;
                         const randY = Math.floor(Math.random() * (maxY - margin)) + margin;
-                        
+
                         // Check distance (> 15 tiles away)
-                        if (getDistance({x: randX, y: randY}, playerHead) > 15) {
+                        if (getDistance({ x: randX, y: randY }, playerHead) > 15) {
                             boss.x = randX;
                             boss.y = randY;
                             safe = true;
@@ -223,24 +220,17 @@ export const updateBoss = (
                         // Fallback teleport to center if logic fails
                         boss.x = 20; boss.y = 15;
                     }
-                    
+
                     vfx.push({ type: 'emp', x: playerHead.x, y: playerHead.y });
                 }
             } else {
                 // --- BOSS DAMAGES PLAYER (Shields Up) ---
                 damageToPlayer = 1; // Explicit damage signal
-                
-                // FORCE RECOIL: Push Boss away from player significantly
-                const angle = Math.atan2(playerHead.y - bossCenter.y, playerHead.x - bossCenter.x);
-                // Push boss away from player (Distance 3.0 to ensure clearance)
-                boss.x -= Math.cos(angle) * 3.0;
-                boss.y -= Math.sin(angle) * 3.0;
-                
-                // Clamp
-                boss.x = Math.max(1, Math.min(BOARD_WIDTH_CELLS - boss.width - 1, boss.x));
-                boss.y = Math.max(1, Math.min(BOARD_HEIGHT_CELLS - boss.height - 1, boss.y));
-                
-                vfx.push({ type: 'shield_break', x: (playerHead.x + bossCenter.x)/2, y: (playerHead.y + bossCenter.y)/2 });
+
+                // NO RECOIL: Boss stays on course or simply continues
+                // This prevents the "pushing" feeling reported by the user
+
+                vfx.push({ type: 'shield_break', x: (playerHead.x + bossCenter.x) / 2, y: (playerHead.y + bossCenter.y) / 2 });
             }
         }
     }
@@ -250,7 +240,7 @@ export const updateBoss = (
         // Spawn logic / Teleport
         if (!boss.nextSpawnTime || timestamp > boss.nextSpawnTime) {
             const count = 3;
-            for(let i=0; i<count; i++) {
+            for (let i = 0; i < count; i++) {
                 pickupsToAdd.push({
                     id: `anchor-${timestamp}-${i}`,
                     x: Math.floor(Math.random() * (BOARD_WIDTH_CELLS - 2)) + 1,
@@ -260,7 +250,7 @@ export const updateBoss = (
                 });
             }
             boss.nextSpawnTime = timestamp + 4000; // Faster teleport (4s instead of 10s)
-            
+
             // Teleport boss random
             boss.x = Math.floor(Math.random() * (BOARD_WIDTH_CELLS - 4)) + 2;
             boss.y = Math.floor(Math.random() * (BOARD_HEIGHT_CELLS - 4)) + 2;
@@ -291,18 +281,18 @@ export const updateBoss = (
             if (bossCenter.x > minX && bossCenter.x < maxX && bossCenter.y > minY && bossCenter.y < maxY) {
                 if (isPointInPolygon(bossCenter, polygon)) {
                     boss.hp -= 1; // Drain fast per tick
-                    vfx.push({ type: 'impact', x: boss.x + Math.random()*boss.width, y: boss.y + Math.random()*boss.height, color: '#FFA500' });
+                    vfx.push({ type: 'impact', x: boss.x + Math.random() * boss.width, y: boss.y + Math.random() * boss.height, color: '#FFA500' });
                     if (timestamp % 200 === 0) playSfx('damage');
-                    
+
                     if (boss.hp <= 0) isBossDead = true;
                 }
             }
         }
-        
+
         // Colossus pulses damage if you touch it
         const playerBox = { x: playerHead.x, y: playerHead.y, width: 1, height: 1 };
         const bossBox = { x: boss.x, y: boss.y, width: boss.width, height: boss.height };
-        
+
         if (checkAABB(playerBox, bossBox)) {
             damageToPlayer = 1;
         }
@@ -313,7 +303,7 @@ export const updateBoss = (
         // Spawn Omega Particles if low
         const omegas = state.pickups.filter(p => p.itemType === 'omega_particle');
         if (omegas.length < 3) {
-             pickupsToAdd.push({
+            pickupsToAdd.push({
                 id: `omega-${timestamp}`,
                 x: Math.floor(Math.random() * (BOARD_WIDTH_CELLS - 2)) + 1,
                 y: Math.floor(Math.random() * (BOARD_HEIGHT_CELLS - 2)) + 1,
@@ -343,14 +333,14 @@ export const updateBoss = (
                 } else {
                     stepY = Math.sign(dy);
                 }
-                
+
                 // Set position (Integer snap)
                 boss.x = Math.round(boss.x + stepX);
                 boss.y = Math.round(boss.y + stepY);
                 boss.lastMove = timestamp;
             }
         }
-            
+
         // Pickup Check
         const hitOmega = omegas.find(o => Math.round(o.x) === boss.x && Math.round(o.y) === boss.y);
         if (hitOmega) {
