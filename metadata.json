@@ -1,0 +1,5 @@
+{
+  "name": "Neon Ouroboros v5 Gates",
+  "description": "A tactical snake game where you build your chassis and manage energy charge. Encircle enemies to destroy them, but beware—an empty chassis is fragile.",
+  "requestFramePermissions": []
+}

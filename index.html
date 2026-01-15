@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Ouroboros</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              vintage: {
+                cream: '#FFFBE6',
+                yellow: '#FEC631',
+                orange: '#F9591F',
+                red: '#F21E2C',
+                maroon: '#B21D3B',
+                plum: '#6A1D41',
+              },
+              dnd: {
+                dark: '#1A1B26',
+                paper: '#E3DAC9',
+                gold: '#C0A080',
+                crimson: '#8A1C1C',
+                steel: '#718096',
+                magic: '#9F7AEA',
+              }
+            },
+            fontFamily: {
+              display: ['Oswald', 'sans-serif'],
+              mono: ['Space Mono', 'monospace'],
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+      body { margin: 0; overflow: hidden; background-color: #050505; }
+      
+      /* CRT Scanline & Vignette Effect */
+      .crt-scanlines {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        pointer-events: none;
+        
+        /* The Scanlines: Transparent then Dark, repeating */
+        background: linear-gradient(
+          to bottom,
+          rgba(255,255,255,0),
+          rgba(255,255,255,0) 50%,
+          rgba(0,0,0,0.3) 50%,
+          rgba(0,0,0,0.3)
+        );
+        background-size: 100% 4px; /* Size of the lines */
+        
+        /* The Vignette: Dark corners */
+        box-shadow: inset 0 0 150px rgba(0,0,0,0.7);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
