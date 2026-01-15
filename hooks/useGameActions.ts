@@ -17,7 +17,7 @@ const REROLL_COST = 50;
 export const useGameActions = (
     setGameState: (updater: (prev: GameState) => GameState) => void,
     unlock: (...ids: string[]) => void,
-    resetInput: (dir?: {x: number, y: number}) => void,
+    resetInput: (dir?: { x: number, y: number }) => void,
     setCountdown: (val: number) => void,
     setTutorialStep: (step: number) => void,
     setLastShownStep: (step: number) => void,
@@ -28,7 +28,7 @@ export const useGameActions = (
 
     const initializeLevel = useCallback((levelData: LevelData, existingUpgrades: Upgrade[], activeModifiers: DifficultyModifier[], existingScore: number, existingCurrency: number, isTestMode: boolean) => {
         let parsedLevel = parseLevel(levelData);
-        
+
         // BOSS LEVEL LOGIC
         // Every 5th level is a boss level (5, 10, 15...)
         const isBossLevel = levelData.id % 5 === 0 && levelData.id !== 0 && !isTestMode;
@@ -39,18 +39,18 @@ export const useGameActions = (
             const emptyLayout = Array(BOARD_HEIGHT_CELLS).fill('.'.repeat(BOARD_WIDTH_CELLS));
             // Add border walls
             emptyLayout[0] = '#'.repeat(BOARD_WIDTH_CELLS);
-            emptyLayout[BOARD_HEIGHT_CELLS-1] = '#'.repeat(BOARD_WIDTH_CELLS);
-            for(let i=1; i<BOARD_HEIGHT_CELLS-1; i++) {
-                emptyLayout[i] = '#' + '.'.repeat(BOARD_WIDTH_CELLS-2) + '#';
+            emptyLayout[BOARD_HEIGHT_CELLS - 1] = '#'.repeat(BOARD_WIDTH_CELLS);
+            for (let i = 1; i < BOARD_HEIGHT_CELLS - 1; i++) {
+                emptyLayout[i] = '#' + '.'.repeat(BOARD_WIDTH_CELLS - 2) + '#';
             }
-            
+
             parsedLevel = parseLevel({
                 ...levelData,
                 layout: emptyLayout,
                 enemyCountBonus: 0,
                 enemyTypes: []
             });
-            
+
             boss = spawnBoss(levelData.id);
         }
 
@@ -81,9 +81,9 @@ export const useGameActions = (
             } else if (mod.type === 'extra_sequence') {
                 sequence.push(mod.data);
             } else if (mod.type === 'enemy_speed') {
-                enemySpeedMult *= 0.95; 
+                enemySpeedMult *= 0.95;
             } else if (mod.type === 'extra_enemy') {
-                extraEnemies.push(mod.data); 
+                extraEnemies.push(mod.data);
             }
         });
 
@@ -95,16 +95,16 @@ export const useGameActions = (
         } else {
             startPos = findSafeSnakePosition(parsedLevel.walls, parsedLevel.enemies);
         }
-        
+
         const startSnake: Segment[] = [
             { id: 'h', x: startPos.x, y: startPos.y, isCharged: false, type: 'head' }
         ];
 
         if (batteryLevel > 0) {
-            for(let i=0; i < batteryLevel; i++) {
+            for (let i = 0; i < batteryLevel; i++) {
                 // If boss level, grow tail downwards or right, away from walls
-                const tailX = isBossLevel ? startPos.x : startPos.x - (i+1);
-                const tailY = isBossLevel ? startPos.y + (i+1) : startPos.y;
+                const tailX = isBossLevel ? startPos.x : startPos.x - (i + 1);
+                const tailY = isBossLevel ? startPos.y + (i + 1) : startPos.y;
                 startSnake.push({ id: `b-init-${i}`, x: tailX, y: tailY, isCharged: true, type: 'body', variant: 'alpha' });
             }
         }
@@ -115,7 +115,7 @@ export const useGameActions = (
 
         const randomEnemies = Array(parsedLevel.config.enemyCountBonus).fill(null).map(() => {
             const e = spawnRandomEnemy(startSnake, parsedLevel.walls, parsedLevel.config.enemyTypes);
-            if (!isTestMode) unlock(e.type); 
+            if (!isTestMode) unlock(e.type);
             return e;
         });
 
@@ -134,7 +134,7 @@ export const useGameActions = (
         });
 
         const allEnemies = [...validPreplacedEnemies, ...randomEnemies, ...modEnemies];
-        
+
         allEnemies.forEach(e => {
             if (e.moveSpeed > 0) {
                 e.moveSpeed = Math.max(1, Math.floor(e.moveSpeed * enemySpeedMult));
@@ -150,11 +150,11 @@ export const useGameActions = (
         setShowTutorialMsg(false);
 
         setGameState(prev => ({
-            ...prev, 
+            ...prev,
             snake: startSnake,
             enemies: allEnemies,
             pickups: (levelData.id === 0) ? [] : spawnPickupsIfNeeded([], startSnake, parsedLevel.walls, existingUpgrades),
-            coins: (levelData.id === 0) ? [] : spawnCoins(10, startSnake, parsedLevel.walls), 
+            coins: (levelData.id === 0) ? [] : spawnCoins(10, startSnake, parsedLevel.walls),
             particles: [],
             walls: parsedLevel.walls,
             score: existingScore,
@@ -169,17 +169,17 @@ export const useGameActions = (
             boss: boss,
             pendingType: null,
             stats: { alphaChain: 0, betaCount: 0, gammaCount: 0 },
-            buffs: { invulnerableUntil: 0, stasisUntil: 0, currentShields: startShields, velocitySyncActiveUntil: 0, velocitySyncCooldownUntil: 0 },
-            requiredSequence: sequence,
-            shop: { choices: [], freePickAvailable: false },
             tickRate: tickRate,
             activeLevelConfig: levelData,
-            isTesting: isTestMode
+            isTesting: isTestMode,
+            comboMeter: 0,
+            adrenalineMult: 1,
+            shakeMagnitude: 0
         }));
-        
+
         setCountdown(3);
         // Start moving right by default
-        resetInput({x: 1, y: 0});
+        resetInput({ x: 1, y: 0 });
     }, [setGameState, setCountdown, resetInput, unlock, highScore, setTutorialStep, setLastShownStep, setTutorialInputHistory, setShowTutorialMsg]);
 
     const startLevel = useCallback((level: number, existingUpgrades: Upgrade[], activeModifiers: DifficultyModifier[], existingScore: number, existingCurrency: number) => {
@@ -190,26 +190,26 @@ export const useGameActions = (
     const selectUpgrade = useCallback((gameState: GameState, upgradeChoice: Upgrade) => {
         const isFree = gameState.shop.freePickAvailable;
         const cost = isFree ? 0 : CARD_COST;
-  
+
         if (!isFree && gameState.currency < cost) return;
-  
+
         audio.play('ui_select');
         const newUpgrades = resolveUpgradePurchase(gameState.activeUpgrades, upgradeChoice);
-        
+
         const newModifiers = [...gameState.activeModifiers];
         if (upgradeChoice.difficultyModifier) {
             newModifiers.push(upgradeChoice.difficultyModifier);
             unlock(upgradeChoice.difficultyModifier.type);
         }
-  
+
         const nextLevelChoices = gameState.shop.choices.map(c => {
             if (c.type === upgradeChoice.type && !c.isBinary && c.level < c.maxLevel) {
-                 const nextLvl = c.level + 1;
-                 return { ...c, level: nextLvl, description: "UPGRADED" }; 
+                const nextLvl = c.level + 1;
+                return { ...c, level: nextLvl, description: "UPGRADED" };
             }
             return c;
         });
-  
+
         setGameState(prev => ({
             ...prev,
             currency: prev.currency - cost,
@@ -233,14 +233,14 @@ export const useGameActions = (
     const handleAbility = useCallback(() => {
         setGameState(prev => {
             if (prev.status !== 'playing') return prev;
-            
+
             const now = Date.now();
             const syncUpgrade = prev.activeUpgrades.find(u => u.type === 'velocity_sync');
-            
+
             if (syncUpgrade) {
                 if (now >= prev.buffs.velocitySyncCooldownUntil) {
-                    const duration = 3000; 
-                    const cdTime = 5000 - ((syncUpgrade.level - 1) * 750); 
+                    const duration = 3000;
+                    const cdTime = 5000 - ((syncUpgrade.level - 1) * 750);
                     audio.play('powerup');
                     return {
                         ...prev,
@@ -256,8 +256,27 @@ export const useGameActions = (
         });
     }, [setGameState]);
 
+    const handleDash = useCallback(() => {
+        setGameState(prev => {
+            if (prev.status !== 'playing') return prev;
+            const now = Date.now();
+            if (now < prev.buffs.dashCooldownUntil) return prev;
+
+            audio.play('powerup');
+            return {
+                ...prev,
+                buffs: {
+                    ...prev.buffs,
+                    dashActiveUntil: now + 300,
+                    dashCooldownUntil: now + 5000 // 5s cooldown for experiment
+                },
+                shakeMagnitude: 10 // Kick off a shake
+            };
+        });
+    }, [setGameState]);
+
     const startEvasionDebug = useCallback((seenEvasionTutorial: boolean) => {
-        resetInput({x: 0, y: 0}); 
+        resetInput({ x: 0, y: 0 });
         const nextStatus = seenEvasionTutorial ? 'evasion' : 'evasion_tutorial';
         setGameState(prev => ({
             ...prev,
@@ -275,11 +294,22 @@ export const useGameActions = (
             level: 1,
             targetIntegrity: 5,
             requiredSequence: ['alpha'],
-            buffs: { invulnerableUntil: 0, stasisUntil: 0, currentShields: 0, velocitySyncActiveUntil: 0, velocitySyncCooldownUntil: 0 },
+            buffs: {
+                invulnerableUntil: 0,
+                stasisUntil: 0,
+                currentShields: 0,
+                velocitySyncActiveUntil: 0,
+                velocitySyncCooldownUntil: 0,
+                dashActiveUntil: 0,
+                dashCooldownUntil: 0
+            },
             stats: { alphaChain: 0, betaCount: 0, gammaCount: 0 },
             shop: { choices: [], freePickAvailable: false },
             isTesting: true,
             evasionLevel: 1,
+            comboMeter: 0,
+            adrenalineMult: 1,
+            shakeMagnitude: 0,
             evasionState: {
                 playerX: Math.floor(BOARD_WIDTH_CELLS / 2),
                 obstacles: [],
@@ -299,6 +329,7 @@ export const useGameActions = (
         selectUpgrade,
         rerollShop,
         handleAbility,
+        handleDash,
         startEvasionDebug
     };
 }

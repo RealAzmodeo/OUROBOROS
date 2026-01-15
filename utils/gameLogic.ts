@@ -210,6 +210,11 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
     let forceDirectionUpdate: Point | undefined = undefined;
     let boss = prev.boss;
 
+    // Locomotion & Feedback Experiment
+    let nextComboMeter = prev.comboMeter;
+    let nextShakeMagnitude = Math.max(0, prev.shakeMagnitude - 0.5); // Decay shake
+    let nextAdrenalineMult = 1;
+
     const isBossLevel = prev.level % 5 === 0 && prev.level < 1000 && prev.level !== 0;
 
     const triggerGameOver = (reason: string, impactX: number, impactY: number, extraVfx: VfxEvent[] = []) => {
@@ -508,6 +513,9 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                 newScore += Math.floor(50 * mult);
                 newPickups.splice(pIndex, 1);
 
+                nextComboMeter++;
+                nextShakeMagnitude = Math.min(5, nextShakeMagnitude + 1);
+
                 if (prev.level === 0 && ctx.tutorialStep === 3) {
                     nextTutorialStep = 4;
                     const spawnY = Math.floor(BOARD_HEIGHT_CELLS * 0.5);
@@ -537,6 +545,9 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
                         if (foundToUnfill) {
                             ctx.playSfx('damage');
+                            nextComboMeter = 0; // Reset combo on damage
+                            nextShakeMagnitude = 8; // Impact shake
+
                             const agility = currentUpgrades.find(u => u.type === 'agility');
                             const integrityEcho = currentUpgrades.find(u => u.type === 'integrity_echo');
                             const bonusTime = (agility ? (agility.level * 1000) : 0) + (integrityEcho ? integrityEcho.value : 0);
@@ -560,6 +571,9 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                     const mult = greed ? 1 + (greed.level * 0.1) : 1;
                     newScore += Math.floor(10 * mult);
                     newPickups.splice(pIndex, 1);
+
+                    nextComboMeter++;
+                    nextShakeMagnitude = Math.min(5, nextShakeMagnitude + 1);
 
                     if (prev.level === 0 && ctx.tutorialStep === 1) {
                         nextTutorialStep = 2;
@@ -631,14 +645,18 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
         if (stabilizer && !isTrap) {
             ctx.playSfx('shield_deflect');
+            nextComboMeter = 0; // Reset combo on hit
             // Revert head (Bounce back visual)
             nextSnakeState[0].x = currentHead.x; nextSnakeState[0].y = currentHead.y;
             currentVfx.push({ type: 'shield_break', x: currentHead.x, y: currentHead.y });
+            nextShakeMagnitude = 5;
         } else if (currentBuffs.currentShields > 0) {
             currentBuffs.currentShields--;
             ctx.playSfx('shield_deflect');
+            nextComboMeter = 0;
             nextSnakeState[0].x = currentHead.x; nextSnakeState[0].y = currentHead.y;
             currentVfx.push({ type: 'shield_break', x: currentHead.x, y: currentHead.y });
+            nextShakeMagnitude = 6;
         } else {
             if (prev.level === 0) return handleTutorialRespawn(prev, currentVfx, ctx, 98);
             ctx.playSfx('wall_crash');
@@ -704,6 +722,8 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
 
             if (damageTakenCount > 0) {
                 ctx.playSfx('damage');
+                nextComboMeter = 0;
+                nextShakeMagnitude = 10;
                 const agility = currentUpgrades.find(u => u.type === 'agility');
                 const integrityEcho = currentUpgrades.find(u => u.type === 'integrity_echo');
                 const bonusTime = (agility ? (agility.level * 1000) : 0) + (integrityEcho ? integrityEcho.value : 0);
@@ -952,7 +972,12 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
         boss: boss,
         status: status,
         shop: shop,
-        lastTrapMoveTime: lastTrapMoveTime
+        lastTrapMoveTime: lastTrapMoveTime,
+
+        // Experimentation Props
+        comboMeter: nextComboMeter,
+        adrenalineMult: 1 + (Math.min(20, nextComboMeter) * 0.05),
+        shakeMagnitude: nextShakeMagnitude
     };
 
     return { newState, shouldTriggerHpTutorial, nextTutorialStep, forcedDirection: forceDirectionUpdate, vfxEvents: currentVfx };

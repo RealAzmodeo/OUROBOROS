@@ -125,6 +125,8 @@ export interface GameBuffs {
   currentShields: number; // Decoupled from upgrade level
   velocitySyncActiveUntil: number;
   velocitySyncCooldownUntil: number;
+  dashActiveUntil: number;
+  dashCooldownUntil: number;
 }
 
 export interface ShopState {
@@ -219,6 +221,11 @@ export interface GameState {
   lastTrapMoveTime?: number; // Timestamp for Trap Migration anomaly
   evasionLevel: number; // Difficulty tracker for minigame
   evasionState?: EvasionState; // Active minigame state
+
+  // Experimentation Properties
+  comboMeter: number;
+  adrenalineMult: number;
+  shakeMagnitude: number;
 }
 
 export const GRID_SIZE = 30;

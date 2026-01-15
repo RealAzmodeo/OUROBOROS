@@ -283,8 +283,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
             // CLEAR DYNAMIC CANVAS
             ctx.clearRect(0, 0, width, height);
 
-            // --- CAMERA SHAKE (On Death) ---
-            // Applied via CSS transform to container to shake both layers efficiently
+            // --- CAMERA SHAKE ---
             let shakeX = 0;
             let shakeY = 0;
             let timeSinceDeath = 0;
@@ -295,12 +294,15 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                 const intensity = Math.max(0, 1 - timeSinceDeath / 1200) * 20;
                 shakeX = (Math.random() - 0.5) * intensity;
                 shakeY = (Math.random() - 0.5) * intensity;
+            } else if (gameState.shakeMagnitude > 0) {
+                shakeX = (Math.random() - 0.5) * gameState.shakeMagnitude;
+                shakeY = (Math.random() - 0.5) * gameState.shakeMagnitude;
+            }
 
-                // Flash screen white briefly on death (Draw on Dynamic Layer)
-                if (timeSinceDeath < 100) {
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(0, 0, width, height);
-                }
+            // Flash screen white briefly on death (Draw on Dynamic Layer)
+            if (timeSinceDeath < 100) {
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
             }
 
             // Apply shake to container
@@ -1001,6 +1003,25 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                         drawShield(ctx, cx, cy, GRID_SIZE, now);
                     }
 
+                    // --- DIEGETIC DASH COOLDOWN ---
+                    const dashCd = gameState.buffs.dashCooldownUntil - now;
+                    if (dashCd > 0) {
+                        const pct = Math.max(0, dashCd / 5000);
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 + Math.sin(now / 100) * 0.2})`;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, CENTER + 4, -0.5 * Math.PI, (pct * 2 * Math.PI) - 0.5 * Math.PI);
+                        ctx.stroke();
+                    } else if (gameState.status === 'playing') {
+                        // "Ready" pulse
+                        const pulse = (Math.sin(now / 200) + 1) / 2;
+                        ctx.strokeStyle = `rgba(0, 240, 255, ${pulse * 0.4})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, CENTER + 6 + (pulse * 4), 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
                     if (gameState.activeUpgrades.some(u => u.type === 'focus')) {
                         let target: { x: number, y: number } | null = null;
                         if (gameState.pendingType) {
@@ -1132,7 +1153,28 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                 ctx.restore();
             }
 
-            // --- 10. Draw Static Overlay (Game Over / Paused) ---
+            // --- 10. Low Integrity Glitch ---
+            const chargeCount = gameState.snake.filter(s => s.type === 'body' && s.isCharged).length;
+            if (chargeCount <= 2 && gameState.status === 'playing' && gameState.level !== 0 && !gameState.boss) {
+                if (Math.random() > 0.85) {
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'screen';
+                    const gh = Math.random() * 40 + 10;
+                    const gy = Math.random() * height;
+                    ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255, 0, 51, 0.15)' : 'rgba(0, 240, 255, 0.15)';
+                    ctx.fillRect(0, gy, width, gh);
+
+                    // Tiny text glitches
+                    if (Math.random() > 0.9) {
+                        ctx.font = '10px "Space Mono"';
+                        ctx.fillStyle = '#FF0033';
+                        ctx.fillText("INTEGRITY CRITICAL", Math.random() * width, Math.random() * height);
+                    }
+                    ctx.restore();
+                }
+            }
+
+            // --- 11. Draw Static Overlay (Game Over / Paused) ---
             if (gameState.status === 'gameover' || gameState.status === 'paused') {
                 const text = gameState.status === 'paused' ? "SYSTEM PAUSED" : "SIGNAL LOST";
                 drawStaticEffect(ctx, width, height, now, text, timeSinceDeath);

@@ -32,13 +32,24 @@ const INITIAL_GAME_STATE: GameState = {
     activeModifiers: [],
     pendingType: null,
     stats: { alphaChain: 0, betaCount: 0, gammaCount: 0 },
-    buffs: { invulnerableUntil: 0, stasisUntil: 0, currentShields: 0, velocitySyncActiveUntil: 0, velocitySyncCooldownUntil: 0 },
+    buffs: {
+        invulnerableUntil: 0,
+        stasisUntil: 0,
+        currentShields: 0,
+        velocitySyncActiveUntil: 0,
+        velocitySyncCooldownUntil: 0,
+        dashActiveUntil: 0,
+        dashCooldownUntil: 0
+    },
     requiredSequence: [],
     shop: { choices: [], freePickAvailable: false },
     tickRate: 100,
     activeLevelConfig: undefined,
     isTesting: false,
-    evasionLevel: 1
+    evasionLevel: 1,
+    comboMeter: 0,
+    adrenalineMult: 1,
+    shakeMagnitude: 0
 };
 
 const App: React.FC = () => {
@@ -171,7 +182,8 @@ const App: React.FC = () => {
         }),
         () => dismissTutorial(),
         (key) => setTutorialInputHistory(prev => new Set(prev).add(key)),
-        () => actions.handleAbility()
+        () => actions.handleAbility(),
+        () => actions.handleDash()
     );
 
     const {
@@ -390,7 +402,8 @@ const App: React.FC = () => {
         onMove: (dir: { x: number, y: number }) => {
             directionRef.directionRef.current = dir;
         },
-        handleAbility: actions.handleAbility
+        handleAbility: actions.handleAbility,
+        handleDash: actions.handleDash
     };
 
     return (
