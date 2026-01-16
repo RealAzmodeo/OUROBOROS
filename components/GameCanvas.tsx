@@ -318,6 +318,10 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
 
             // --- 1. Draw DYNAMIC Walls (Traps & Gates) ---
             const pulse = (Math.sin(now / 300) + 1) / 2; // 0..1 smooth wave
+            const headSegment = gameState.snake[0];
+            const isStasis = gameState.buffs.stasisUntil > now;
+            let nearestEnemyDist = Infinity;
+            let nearestEnemyPos = { x: 0, y: 0 };
 
             const trapWalls = gameState.walls.filter(w => w.type === 'trap');
             const gateWalls = gameState.walls.filter(w => w.type === 'gate');
@@ -848,6 +852,46 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
             gameState.enemies.forEach(e => {
                 const px = e.x * GRID_SIZE;
                 const py = e.y * GRID_SIZE;
+
+                // 2. Track nearest enemy for Danger Radar
+                const distToHead = getDistance(headSegment, e);
+                if (distToHead < nearestEnemyDist) {
+                    nearestEnemyDist = distToHead;
+                    nearestEnemyPos = { x: px + CENTER, y: py + CENTER };
+                }
+
+                // 3. Enemy Sight Lines (Chasers & Ghosts)
+                if ((e.type === 'chaser' || e.type === 'ghost') && !isStasis) {
+                    ctx.save();
+                    ctx.setLineDash([5, 10]);
+                    ctx.strokeStyle = e.color || colors.enemy;
+                    ctx.globalAlpha = 0.2 + (Math.sin(now / 150) * 0.1);
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(px + CENTER, py + CENTER);
+                    ctx.lineTo(headSegment.x * GRID_SIZE + CENTER, headSegment.y * GRID_SIZE + CENTER);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // 4. Replicator split progress bar
+                if (e.type === 'replicator' && e.spawnedAt) {
+                    const elapsed = now - e.spawnedAt;
+                    const pct = Math.min(1, elapsed / 8000);
+                    ctx.save();
+                    const barW = GRID_SIZE - 4;
+                    const barH = 3;
+                    const bx = px + 2;
+                    const by = py - 6;
+
+                    // BG
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                    ctx.fillRect(bx, by, barW, barH);
+                    // FG
+                    ctx.fillStyle = pct > 0.8 ? '#FF0033' : '#00FFCC';
+                    ctx.fillRect(bx, by, barW * pct, barH);
+                    ctx.restore();
+                }
                 const cx = px + CENTER;
                 const cy = py + CENTER;
                 const enemyBaseColor = e.color || colors.enemy;
@@ -1024,6 +1068,28 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                         ctx.beginPath();
                         ctx.arc(cx, cy, CENTER + 6 + (pulse * 4), 0, Math.PI * 2);
                         ctx.stroke();
+                    }
+
+                    // --- DANGER RADAR (PROXIMITY WARNING) ---
+                    if (nearestEnemyDist < 6 && gameState.status === 'playing') {
+                        const angle = Math.atan2(nearestEnemyPos.y - cy, nearestEnemyPos.x - cx);
+                        const radius = CENTER + 12;
+                        const blink = (Math.sin(now / 150) + 1) / 2;
+
+                        ctx.save();
+                        ctx.translate(cx, cy);
+                        ctx.rotate(angle);
+                        ctx.fillStyle = `rgba(255, 0, 51, ${0.4 + blink * 0.6})`;
+                        ctx.shadowColor = '#FF0033';
+                        ctx.shadowBlur = 10;
+
+                        // Wedge/Chevron shape pointing OUTWARD
+                        ctx.beginPath();
+                        ctx.moveTo(radius, -5);
+                        ctx.lineTo(radius + 10, 0);
+                        ctx.lineTo(radius, 5);
+                        ctx.fill();
+                        ctx.restore();
                     }
 
                     if (gameState.activeUpgrades.some(u => u.type === 'focus')) {
