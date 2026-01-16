@@ -187,6 +187,7 @@ export const updateBoss = (
                 // --- PLAYER DAMAGES BOSS ---
                 boss.hp--;
                 playSfx('explosion');
+                vfx.push({ type: 'shockwave', x: bossCenter.x, y: bossCenter.y, color: '#FF0000' });
                 vfx.push({ type: 'explosion', x: bossCenter.x, y: bossCenter.y, color: '#FF0000' });
 
                 if (boss.hp <= 0) {

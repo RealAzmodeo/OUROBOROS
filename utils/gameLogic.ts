@@ -743,6 +743,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
             boss = undefined;
             ctx.playSfx('powerup');
             portal = { x: Math.floor(BOARD_WIDTH_CELLS / 2), y: Math.floor(BOARD_HEIGHT_CELLS / 2), createdAt: ctx.timestamp };
+            currentVfx.push({ type: 'shockwave', x: portal.x, y: portal.y, color: '#FFFFFF' });
             currentVfx.push({ type: 'emp', x: portal.x, y: portal.y });
             newScore += 5000;
         }
@@ -769,6 +770,7 @@ export const processGameTick = (prev: GameState, ctx: GameTickContext): GameTick
                 s1.moveSpeed = 2; // Extra fast
                 s2.moveSpeed = 2;
                 newEnemies.push(s1, s2);
+                currentVfx.push({ type: 'shockwave', x: e.x, y: e.y, color: e.color });
             }
 
             newEnemies.splice(headHitIndex, 1);

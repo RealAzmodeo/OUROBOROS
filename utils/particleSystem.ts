@@ -21,7 +21,7 @@ export class ParticleSystem {
     constructor() {
         this.pool = [];
         this.activeParticles = [];
-        
+
         // Initialize Pool
         for (let i = 0; i < MAX_PARTICLES; i++) {
             this.pool.push(new PooledParticle());
@@ -52,20 +52,23 @@ export class ParticleSystem {
             case 'emp':
                 this.createEmp(x, y);
                 break;
+            case 'shockwave':
+                this.createShockwave(x, y, color);
+                break;
         }
     }
-    
+
     // Generic internal spawner
     private activateParticle(x: number, y: number, vx: number, vy: number, life: number, color: string, size: number) {
         // Find first inactive particle in pool (or recycle oldest if full?) 
         // Simple search for now. With MAX=1000, we can just grab from a 'free list' stack if we optimized, 
         // but linear scan of inactive is okay if we maintain an active list.
-        
+
         // Better: swap active/inactive logic.
         // Let's just use a pointer or filter.
         // For pooling to be efficient, we shouldn't create arrays.
         // We will just search the pool for an inactive one.
-        
+
         const p = this.pool.find(p => !p.active);
         if (p) {
             p.active = true;
@@ -82,7 +85,7 @@ export class ParticleSystem {
     private createExplosion(x: number, y: number, color: string, count: number) {
         for (let i = 0; i < count; i++) {
             this.activateParticle(
-                x + (Math.random() - 0.5), 
+                x + (Math.random() - 0.5),
                 y + (Math.random() - 0.5),
                 (Math.random() - 0.5) * 0.5,
                 (Math.random() - 0.5) * 0.5,
@@ -174,6 +177,21 @@ export class ParticleSystem {
         }
     }
 
+    private createShockwave(x: number, y: number, color: string) {
+        for (let i = 0; i < 48; i++) {
+            const angle = (Math.PI * 2 * i) / 48;
+            const speed = 0.8;
+            this.activateParticle(
+                x, y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                0.8,
+                color,
+                4 // Larger particles for shockwave
+            );
+        }
+    }
+
     public update() {
         // Iterate through pool and update active ones
         for (const p of this.pool) {
@@ -198,17 +216,17 @@ export class ParticleSystem {
                 // but particles spawned with grid coordinates need conversion if drawing on grid canvas.
                 // However, spawn() usually takes grid coordinates. 
                 // Let's assume input X/Y are Grid Coordinates.
-                
+
                 // Draw Rect
                 // (x * GRID_SIZE + CENTER) is roughly how GameCanvas calculates centers.
                 // But particle X/Y might already be in pixels if we passed pixel coords?
                 // gameLogic passes GRID COORDS.
-                
+
                 // NOTE: GameCanvas code applies GRID_SIZE scaling.
                 // We should do it here.
                 const px = (p.x * gridSize); // + centerOffset if needed, usually passed
                 const py = (p.y * gridSize);
-                
+
                 ctx.fillRect(px, py, p.size * 2, p.size * 2); // Make them visible
             }
         }

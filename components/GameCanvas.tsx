@@ -463,6 +463,20 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
 
                 ctx.save();
 
+                // Chromatic Aberration Aura (Distortion)
+                const auraSize = Math.max(bw, bh) * 0.2;
+                const auraPulse = Math.sin(now / 150) * 5;
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                ctx.globalAlpha = 0.3;
+                // Red Shift
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(bx - auraSize + auraPulse, by - auraSize, bw + auraSize * 2, bh + auraSize * 2);
+                // Cyan Shift
+                ctx.fillStyle = '#00FFFF';
+                ctx.fillRect(bx - auraSize - auraPulse, by - auraSize, bw + auraSize * 2, bh + auraSize * 2);
+                ctx.restore();
+
                 // Glitch effect
                 if (Math.random() > 0.95) {
                     const jx = (Math.random() - 0.5) * 10;
@@ -895,6 +909,19 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                 const cx = px + CENTER;
                 const cy = py + CENTER;
                 const enemyBaseColor = e.color || colors.enemy;
+
+                // Distortion Aura for Elites (Replicators & Splitters)
+                if (e.type === 'replicator' || e.type === 'splitter') {
+                    const auraPulse = Math.sin(now / 100) * 3;
+                    ctx.save();
+                    ctx.globalAlpha = 0.2;
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.fillStyle = '#FF0033';
+                    ctx.fillRect(px + PAD - auraPulse, py + PAD - auraPulse, INNER_SIZE + auraPulse * 2, INNER_SIZE + auraPulse * 2);
+                    ctx.fillStyle = '#00F0FF';
+                    ctx.fillRect(px + PAD + auraPulse, py + PAD + auraPulse, INNER_SIZE + auraPulse * 2, INNER_SIZE + auraPulse * 2);
+                    ctx.restore();
+                }
 
                 if (e.trail && e.trail.length > 0) {
                     e.trail.forEach((pos, idx) => {

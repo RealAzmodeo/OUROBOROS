@@ -152,7 +152,7 @@ export interface ParsedLevel {
 }
 
 // VFX EVENT SYSTEM
-export type VfxType = 'explosion' | 'pickup' | 'impact' | 'heal' | 'fill' | 'emp' | 'shield_break' | 'text_float';
+export type VfxType = 'explosion' | 'pickup' | 'impact' | 'heal' | 'fill' | 'emp' | 'shield_break' | 'text_float' | 'shockwave';
 export interface VfxEvent {
   type: VfxType;
   x: number;
