@@ -80,9 +80,12 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
         if (!staticCtx || !ctx) return;
 
         // Scaling helpers
-        const PAD = GRID_SIZE * 0.15; // ~4.5px at size 30
-        const INNER_SIZE = GRID_SIZE - (PAD * 2);
         const CENTER = GRID_SIZE / 2;
+        const INNER_SIZE = GRID_SIZE - 6;
+        const PAD = 3;
+
+        // Polishing Constants
+        const ENABLE_DISTRACTING_GLITCHES = false;
 
         let animationFrameId: number;
 
@@ -464,21 +467,23 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                 ctx.save();
 
                 // Chromatic Aberration Aura (Distortion)
-                const auraSize = Math.max(bw, bh) * 0.2;
-                const auraPulse = Math.sin(now / 150) * 5;
-                ctx.save();
-                ctx.globalCompositeOperation = 'screen';
-                ctx.globalAlpha = 0.3;
-                // Red Shift
-                ctx.fillStyle = '#FF0000';
-                ctx.fillRect(bx - auraSize + auraPulse, by - auraSize, bw + auraSize * 2, bh + auraSize * 2);
-                // Cyan Shift
-                ctx.fillStyle = '#00FFFF';
-                ctx.fillRect(bx - auraSize - auraPulse, by - auraSize, bw + auraSize * 2, bh + auraSize * 2);
-                ctx.restore();
+                if (ENABLE_DISTRACTING_GLITCHES) {
+                    const auraSize = Math.max(bw, bh) * 0.2;
+                    const auraPulse = Math.sin(now / 150) * 5;
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.globalAlpha = 0.3;
+                    // Red Shift
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(bx - auraSize + auraPulse, by - auraSize, bw + auraSize * 2, bh + auraSize * 2);
+                    // Cyan Shift
+                    ctx.fillStyle = '#00FFFF';
+                    ctx.fillRect(bx - auraSize - auraPulse, by - auraSize, bw + auraSize * 2, bh + auraSize * 2);
+                    ctx.restore();
+                }
 
                 // Glitch effect
-                if (Math.random() > 0.95) {
+                if (ENABLE_DISTRACTING_GLITCHES && Math.random() > 0.95) {
                     const jx = (Math.random() - 0.5) * 10;
                     const jy = (Math.random() - 0.5) * 10;
                     ctx.translate(jx, jy);
@@ -911,7 +916,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
                 const enemyBaseColor = e.color || colors.enemy;
 
                 // Distortion Aura for Elites (Replicators & Splitters)
-                if (e.type === 'replicator' || e.type === 'splitter') {
+                if (ENABLE_DISTRACTING_GLITCHES && (e.type === 'replicator' || e.type === 'splitter')) {
                     const auraPulse = Math.sin(now / 100) * 3;
                     ctx.save();
                     ctx.globalAlpha = 0.2;
@@ -1197,7 +1202,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
             particleSystem.update();
             particleSystem.draw(ctx, GRID_SIZE, 0); // Particles are in Grid Coords in our logic
 
-            if (gameState.status === 'gameover' && timeSinceDeath < 1000) {
+            if (ENABLE_DISTRACTING_GLITCHES && gameState.status === 'gameover' && timeSinceDeath < 1000) {
                 const glitchChance = 1 - (timeSinceDeath / 1000);
                 if (Math.random() < glitchChance * 0.5) {
                     const x = Math.random() * width;
@@ -1252,7 +1257,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({ gameStateRef, mode, width, heig
 
             // --- 10. Low Integrity Glitch ---
             const chargeCount = gameState.snake.filter(s => s.type === 'body' && s.isCharged).length;
-            if (chargeCount <= 2 && gameState.status === 'playing' && gameState.level !== 0 && !gameState.boss) {
+            if (ENABLE_DISTRACTING_GLITCHES && chargeCount <= 2 && gameState.status === 'playing' && gameState.level !== 0 && !gameState.boss) {
                 if (Math.random() > 0.85) {
                     ctx.save();
                     ctx.globalCompositeOperation = 'screen';
